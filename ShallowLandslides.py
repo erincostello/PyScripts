@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------------------
-# ShallowLandslide_py v2.31
+# ShallowLandslide_py v2.4
 #
 # PURPOSE
 # This script generates a shallow landslide susceptibility raster using
@@ -39,11 +39,11 @@ from arcpy.sa import *
 isLiDAR = True
 DEM_raster_input = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\BareEarth_Prob.gdb\\be_prob"
 FSP_raster_input = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\Lithology.gdb\\Lithology_ws_FSP"
-Slope_Reclassification_Table = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v3\\slope_relcass_v3"
-Lith_Reclassification_Table = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v3\\lithology_reclass_v3"
-Plan_Reclassification_Table1 = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v3\\planform_reclass_LiDAR_v3"
-Plan_Reclassification_Table2 = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v3\\planform_reclass_dem10m_v3"
-Susceptability_Reclassification_Table = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v3\\susceptibility_reclass_v3"
+Slope_Reclassification_Table = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v2_4\\slope_relcass"
+Lith_Reclassification_Table = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v2_4\\lithology_reclass"
+Plan_Reclassification_Table1 = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v2_4\\planform_reclass_LiDAR"
+Plan_Reclassification_Table2 = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v2_4\\planform_reclass_dem10m"
+Susceptability_Reclassification_Table = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\Reclass_Tables_v2_4\\susceptibility_reclass"
 
 # OUTPUT FILES
 env.workspace = "C:\\WorkSpace\\Biocriteria\\WatershedCharaterization\\ShallowLandslides\\ShallowLandslides_OUT_LiDAR_prob.gdb"
