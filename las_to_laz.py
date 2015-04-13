@@ -14,15 +14,15 @@ import subprocess
 
 # inputs ##################################################
 walkpath = True
-exe_conversion = True
+LASzip_conversion = True
 
 # Extension/s to search for. This is always a tuple and
 # either .las, or .laz
 extensions_to_find = (".las")
 
-csv_las = r"\\DEQWQNAS01\Lidar06\las_paths_Lidar06.csv"
+csv_output = r"\\DEQWQNAS01\Lidar06\las_paths_Lidar06.csv"
 
-# The top level directory or directories where the searching strarts. 
+# The top level directory or directories where the searching starts. 
 # Always a list
 workspaces = [r"\\DEQWQNAS01\Lidar06"]
 #workspaces = [r"\\DEQWQNAS01\Lidar01",
@@ -49,7 +49,7 @@ ignore = ["REPORT", "VEC", "SHAP", "ASC", "TIN", "INTEN", "RASTER",
           "RECYCLER", "System Volume Information","Lower_Columbia",
           "USFS_Original","Yamhill_DEQ","Deschutes_from_USFS_old", "XXX"]
 
-# inputs ##################################################
+# End ##################################################
 
 def read_csv(csvfile, skipheader = False):
     """Reads an input csv file and returns the header row as a list
@@ -107,12 +107,12 @@ if walkpath is True:
                     las_list.append(["#", f, os.path.join(dirpath, f)])
                     
     print("writing paths to csv")
-    write_csv(las_list, csv_las)
+    write_csv(las_list, csv_output)
     print("Done walking")
 
-if exe_conversion is True:
+if LASzip_conversion is True:
     n = 0
-    las_list = read_csv(csv_las, skipheader=False)
+    las_list = read_csv(csv_output, skipheader=False)
     for row in las_list:
         status = row[0]
         file_name = row[1]
@@ -145,12 +145,12 @@ if exe_conversion is True:
                         else:
                             # update the csv file
                             las_list[n][0] = status
-                            write_csv(las_list, csv_las)
+                            write_csv(las_list, csv_output)
             else:
                 print("Error: " + inpath_temp + " does not exist")
                 status = "E"
                 las_list[n][0] = status
-                write_csv(las_list, csv_las)
+                write_csv(las_list, csv_output)
         n = n + 1
     print("Done converting from {0}".format(extensions_to_find))
 print("Done with script")
