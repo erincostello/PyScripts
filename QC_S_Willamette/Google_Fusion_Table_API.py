@@ -26,7 +26,7 @@ from oauth2client.file import Storage
 os.chdir(r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWillamette\Mapping_Web")
 credentials_file = r"credentials"
 
-api_key = "AIzaSyB91lmWwJ1FdY1X6M6vGDU719w_lJ-OHUM"
+api_key = read_secret_file
 
 class Google_FushionTable_API:
     def __init__(self):

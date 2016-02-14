@@ -14,7 +14,8 @@ from oauth2client.file import Storage
 os.chdir(r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWillamette\Mapping_Web")
 credentials_file = r"credentials"
 
-api_key = "AIzaSyB91lmWwJ1FdY1X6M6vGDU719w_lJ-OHUM"
+api_key = read_secret_file
+
 
 def table_insert(self, t_columns, isExportable, name, attribution=None, attributionLink=None, description=None):
     print "Create a new table, returns table id"
