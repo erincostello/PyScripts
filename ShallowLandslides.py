@@ -1,29 +1,30 @@
-#------------------------------------------------------------------------------------------
-# ShallowLandslide_py v2.4
-#
-# PURPOSE
-# This script generates a shallow landslide susceptibility raster using
-# morphometric analysis of slope, landform, and lithology. The methods used here follow
-# those described by Shaw and Johnson (1995).  Calibration and parameterization was
-# based on landslide inventory data collected by Robinson et al (1999).
-#
-# Output landslide susceptibility reflects the susceptibility that may occur under similar
-# landscape and precipitation conditions observed in the study areas.
-# The landslide inventory data used to calibrate this model was collected after
-# the 1996/97 Oregon rainstorms where the minimum, maximum, and mean 24 hour
-# precipitation was 2.9 inches, 11.7 inches, and 6.9 inches respectively. This equates to
-# approximately 51%, 110% and 81% of the 24 hour 100 year precipitation event.
-#
-#
-# REQUIREMENTS
-# Python 2.7.2, ArGIS arcpy, and Spatial analyst
-# Use of LiDAR data is highly reccommended.
-#
-# CONTACT
-# Ryan Michie, michie.ryan@deq.state.or.us
-# Oregon Department of Environmental Quality
-# 
-#------------------------------------------------------------------------------------------
+"""
+ShallowLandslide_py v2.4.1
+
+PURPOSE
+This script generates a shallow landslide susceptibility raster using
+morphometric analysis of slope, landform, and lithology. The methods used
+here followthose described by Shaw and Johnson (1995).  Calibration
+and parameterization wasbased on landslide inventory data collected
+by Robinson et al (1999).
+
+Output landslide susceptibility reflects the susceptibility that may
+occur under similarlandscape and precipitation conditions observed in
+the study areas.The landslide inventory data used to calibrate this
+model was collected after the 1996/97 Oregon rainstorms where the
+minimum, maximum, and mean 24 hour precipitation was 2.9 inches,
+11.7 inches, and 6.9 inches respectively. This equates to approximately
+51%, 110% and 81% of the 24 hour 100 year precipitation event.
+
+REQUIREMENTS
+Python 2.7.2, ArGIS arcpy, and Spatial analyst
+Use of LiDAR data is highly reccommended.
+
+CONTACT
+Ryan Michie, michie.ryan@deq.state.or.us
+Oregon Department of Environmental Quality
+
+"""
 
 # Import modules
 import arcpy
@@ -34,6 +35,8 @@ from arcpy import env
 # Check out Spatial Analyst
 arcpy.CheckOutExtension("spatial")
 from arcpy.sa import *
+
+ver = 2.4.1
 
 # INPUT FILES
 isLiDAR = True
@@ -71,7 +74,7 @@ env.snapRaster = DEM_raster_input
 ###########################
 # keeping track of time
 startTime= time.time()
-print "START ShallowLandslide_py v2.3: %s" % (time.ctime(startTime))
+print "START ShallowLandslide_py v{0}: {1}".format(ver, time.ctime(startTime))
 
 ###########################
 # 1. Landform shape, use Planform only
@@ -167,5 +170,5 @@ SUSCEP_relcass.save(OUT_SUSCEP_reclass)
 
 endTime = time.time()
 Elapsed_MIN = (endTime - startTime) / 60
-print "All processes complete in %s minutes" % (Elapsed_MIN)
-print "END ShallowLandslide_py v2.3: %s" % (time.ctime(endTime))
+print "All processes complete in {0} minutes".format(Elapsed_MIN)
+print "END ShallowLandslide_py v{0}: {1}".format(ver, (time.ctime(endTime))
