@@ -64,11 +64,11 @@ lccode16_dict_csv = "landcover_codes_dict.csv"
 
 # Name of the input lccodes csv that has the 
 # current condtion landcover code values
-lccode_current = "lccodes_current.csv"
+lccode_current = "lccodes_treatments_current.csv"
 
 # This is the name of the output lccode csv file. 
 # The year will be appended to this name when the file is output
-lccode_data_csv = "lccodes"
+lccode_data_csv = "lccodes_treatments"
 
 # Using the same values as current conditions
 canopy_cover = 0.85
@@ -299,17 +299,18 @@ lccode16_dict = read_csv_to_dict(dirpath, lccode16_dict_csv)
 
 lccodes_list = read_csv_to_list(dirpath, lccode_current)
 
-# Instead of reading in the lccodes for each model 
+# This is an alternative method.
+# Instead of reading in and existing lccodes csv
 # I build a single set codes that cover all the possible values
 #---------------------------------------------------------
 # This is the 16bit codes without height
-site = [i for i in range(11000, 46000, 1000)]
+#site = [i for i in range(11000, 46000, 1000)]
 
 # This is the height range in meters
-ht = [i for i in range(0, 400)]
+#ht = [i for i in range(0, 400)]
 
 # Put it all togehter
-lccodes = [s + h for s in site for h in ht]
+#lccodes = [s + h for s in site for h in ht]
 #---------------------------------------------------------
 
 
@@ -390,14 +391,16 @@ for model_year in model_years:
                                         (cottonwood * 0.09) +
                                         (redalder * 0.08) +
                                         (bl_maple * 0.07))
+                    
+                ht_new = int(treatment_avg_ht + 0.5)
                 
-                if ht_current > 8:
+                if ht_current > 8 and ht_current > ht_new:
                     desc = "{0} Treatment Site Existing Vegetation".format(treatment)
                     ht_new = ht_current
                     
                 else:
                     desc = "{0} Treatment Site Plantings - Age {1}".format(treatment, tree_age)
-                    ht_new = int(treatment_avg_ht + 0.5)
+                    
                     
                 row[0] = desc
                 row[2] = ht_new
