@@ -6,15 +6,16 @@
 # It also filters based on geographic locations.
 
 # The output is a csv information with organized this way:
-# header = ["STATUS", "NAME", "PATH", "YEAR", "NAMECLEAN", "NAMENEW", "TYPE"]
+# header = ["STATUS", "NAME", "PATH", "PROJECT", "YEAR", "NAMECLEAN", "NAMENEW", "TYPE"]
 
 # 0 Processing status
 # 1 Raster Name
 # 2 path to raster
-# 3 Year
-# 4 NameClean
-# 5 NewName
-# 6 image
+# 3 the AOI project name
+# 4 Year LiDAR was acquired
+# 5 NameClean
+# 6 NewName
+# 7 image
 
 import arcpy
 import os
@@ -26,12 +27,9 @@ from collections import defaultdict
 from operator import itemgetter
 
 # output csv files, (if these files already exist)
-csv_be = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new_BE_rasters.csv"
-csv_hh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new_HH_rasters.csv"
-csv_vh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new_VH_rasters.csv"
-
-# ouput csv header
-header = ["STATUS", "NAME", "PATH", "YEAR", "PROJECT", "NAMECLEAN", "NAMENEW", "TYPE"]
+csv_be = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new2_BE_rasters.csv"
+csv_hh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new2_HH_rasters.csv"
+csv_vh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new2_VH_rasters.csv"
 
 # input to use as an existing raster_list
 #in_be_shp =  r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWilamette\VH_footprints_20150316.shp"
@@ -39,17 +37,21 @@ header = ["STATUS", "NAME", "PATH", "YEAR", "PROJECT", "NAMECLEAN", "NAMENEW", "
 #in_vh_shp = 
 
 # input csv file indicating which year the project was flown
-csv_year =  r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\path_by_year_20150313.csv"
+csv_year =  r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\path_by_year_20150825.csv"
 
 # search and replace strings for veght (some files use the longer prefix)
-str_search_list = ["veght"]
+str_search_list = ["veght", "veg_height"]
 replace_str = "vh"
 
 # strings to identify different rasters types
 keep_be = ["be", "bare"]
 keep_hh = ["hh", "high"]
-keep_vh = ["vh", "veght"]
+keep_vh = ["vh", "veght", "veg_height"]
 
+# ouput csv header
+header = ["STATUS", "NAME", "PATH", "PROJECT", "YEAR", "NAMECLEAN", "NAMENEW", "TYPE"]
+
+# output column assignments
 status_col = 0
 name_col = 1
 path_col = 2
@@ -60,7 +62,7 @@ new_name_col = 6
 type_col = 7
 
 # if overwrite_csv = False an existing output csv should be present 
-# it read in the data and append any new data found 
+# it reads in the data and appends any new data found 
 # It does not check for duplicate paths
 overwrite_csv = True
 
@@ -68,8 +70,8 @@ cleannames = True
 newnames = True
 geofilter = True
 
-geo_field_name = "HU_6_NAME"
-geo_area = "'Willamette'"
+geo_field_name = "HUC_8"
+geo_area = "'17090001','17090002','17090003','17090004','17090005','17090006'"
 
 # List of directories to search
 #workspaces = [r"\\DEQWQNAS01\Lidar01",
@@ -80,9 +82,7 @@ geo_area = "'Willamette'"
         #r"\\DEQWQNAS01\Lidar06"]
         
 workspaces = [r"\\DEQWQNAS01\Lidar01\PDX-MTHood",
-        r"\\DEQWQNAS01\Lidar01\Portland_Pilot",
         r"\\DEQWQNAS01\Lidar01\WillametteValley",
-        r"\\DEQWQNAS01\Lidar01\Yaquina_Block",
         r"\\DEQWQNAS01\Lidar03\Blue_River\Other_Products\OGIC",
         r"\\DEQWQNAS01\Lidar03\Central_Coast_Range",
         r"\\DEQWQNAS01\Lidar03\HJAndrews\Other_Products\OGIC",
@@ -156,8 +156,7 @@ def read_csv_dict(csvfile, key_col, value_col, skipheader = True):
     return csvdict
 
 def read_csv(csvfile, skipheader = False):
-    """Reads an input csv file and returns the header row as a list
-    and the data as a nested dictionary"""
+    """Reads an input csv file and returns the data as a list"""
     with open(csvfile, "rb") as f:
         reader = csv.reader(f)
         if skipheader == True: reader.next()
@@ -251,7 +250,7 @@ def geo_filter(raster_list, geo_field_name, geo_area, clean_col):
     fc = db.GetLayer("WBD_HU06_HUC12_Quadindex7_5")
     
     # Pull the feature with the query
-    fc.SetAttributeFilter("{0} = {1}".format(geo_field_name, geo_area))
+    fc.SetAttributeFilter("{0} IN ({1})".format(geo_field_name, geo_area))
     
     # Pull the quads
     quads = [feature.GetField("OHIOCODE") for feature in fc]

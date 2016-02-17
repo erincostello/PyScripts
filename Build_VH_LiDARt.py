@@ -39,7 +39,7 @@ def nested_dict():
     return defaultdict(nested_dict)
 
 def read_csv(csvfile, skipheader = False):
-    """Reads an input csv file and returns the header row as a list and the data as a nested dictionary"""
+    """Reads an input csv file and returns the data as a list"""
     with open(csvfile, "rb") as f:
         reader = csv.reader(f)
         if skipheader: reader.next()

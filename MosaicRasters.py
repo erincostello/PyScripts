@@ -11,7 +11,15 @@ from osgeo import ogr
 from osgeo import gdal
 from osgeo import gdal_merge
 
+header = ["STATUS", "NAME", "PATH", "YEAR", "NAMECLEAN", "NAMENEW", "TYPE"]
 
+status_col = 0
+order_col = 1
+year_col = 2
+path_col = 3
+name_col = 4
+new_name_col = 5
+type_col = 6
 
 # To run the gdal commands you first have to set the path and GDAL_DATA variable in environments.
 # C:\Python27\Lib\site-packages\osgeo
@@ -19,17 +27,17 @@ from osgeo import gdal_merge
 
 #in_gdbpath = r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWilamette\LiDAR.gdb"
 #in_gdb_fc = "VH_footprints"
-#in_csvfile = r"\\DEQWQNAS01\Lidar08\LiDAR\YEAR\year_quad_list_input.csv"
-in_shp =  r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWilamette\VH_footprints_20150316.shp"
+in_csvfile = r"\\DEQWQNAS01\Lidar08\LiDAR\YEAR\Year_quad_list_input.csv"
+#in_shp =  r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWilamette\VH_footprints_20150316.shp"
 proj_final = 'EPSG:2992'
-outpath_warp = r"N:\LiDAR\VH"
-outpath_reclass = r"N:\LiDAR\VH"
-out_vrt = r"N:\LiDAR\VH\VH.vrt"
-outcsvfile = r"N:\LiDAR\VH\VH_quad_list_output.csv"
-outtxtfile = r"N:\LiDAR\VH\VH_mosaic_list.txt"
-outmosaic = r"N:\LiDAR\VH\VH_mosaic.img"
-outmosaic_path = r"N:\LiDAR\VH"
-outmosaic_name = r"VH_mosaic.img"
+outpath_warp = r"N:\LiDAR\BE\new"
+#outpath_reclass = r"\\DEQWQNAS01\Lidar08\LiDAR\YEAR\new"
+out_vrt = r"N:\LiDAR\BE\new\BE.vrt"
+outcsvfile = r"N:\LiDAR\BE\new\BE_quad_list_output_new.csv"
+outtxtfile = r"N:\LiDAR\BE\new\BE_mosaic_list.txt"
+outmosaic = r"N:\LiDAR\BE\BE_mosaic.img"
+outmosaic_path = r"N:\LiDAR\BE"
+outmosaic_name = r"BE_mosaic.img"
 infile_type = "\\hdr.adf"
 #infile_type = ""
 out_format = "HFA"
@@ -39,8 +47,8 @@ buildwarp = False
 buildreclass = False
 buildvrt_list = True
 buildvrt = True
-buildmosaic = True
-buildpyramids = True
+buildmosaic = False
+buildpyramids = False
 rc_lower = -50000
 rc_upper = 50000
 
@@ -129,7 +137,7 @@ def  build_raster_list_from_gdb(in_gdb_path, in_gdb_fc):
     
     return(raster_list)
 
-def  build_raster_list_from_csv(csvfile, year_col, path_col, name_col, new_name_col):
+def  build_raster_list_from_csv(csvfile, status_col, year_col, path_col, name_col, new_name_col):
     """Read from a csv, and pull the path, year,
     and raster file names of each raster to be processed into a sorted list.
     csv must contain a fields titled Year, Path, and Name"""
@@ -199,9 +207,9 @@ def execute_cmd(cmd_list):
 
 # get from csv file or build one from a feature class and export to csv
 if overwrite_csv is True:
-    raster_list = build_raster_list_from_shp(in_shp)
+    #raster_list = build_raster_list_from_shp(in_shp)
     #raster_list = build_raster_list_from_gdb(in_gdb_path, in_gdb_fc)
-    #raster_list = build_raster_list_from_csv(in_csvfile, year_col=0, path_col=1, name_col=2, new_name_col=3)
+    raster_list = build_raster_list_from_csv(in_csvfile, year_col=0, path_col=1, name_col=2, new_name_col=3)
     write_csv(raster_list, outcsvfile)
 else:
     csv_exists = os.path.isfile(outcsvfile)   
@@ -269,6 +277,7 @@ raster_list = get_format(raster_list)
 write_csv(raster_list, outcsvfile)
 
 # -- Reclass the rasters ----------------------------------------------
+n = 0
 if buildreclass is True:
     for row in raster_list:
         status = row[0]
@@ -366,11 +375,11 @@ else:
    
 # -- Build the gdal VRT. -----------------------------------------------
 # Must not have an error in status
-if buildvrt in [True]:
+if buildvrt is True:
     if buildvrt_list is True:
         write_txt(in_vrt_rasters, outtxtfile)
         
-    cmd_list = ['gdalbuildvrt -overwrite -q -input_file_list {0} {1}'.format(outtxtfile, out_vrt)]
+    cmd_list = ['gdalbuildvrt -resolution highest -hidenodata -addalpha -overwrite -q -input_file_list {0} {1}'.format(outtxtfile, out_vrt)]
     status = execute_cmd(cmd_list)
     if status is "E":
         buildmosaic = False
@@ -385,7 +394,16 @@ if buildmosaic is True:
     print("building mosaic")
     #cmd_list = ['gdal_translate -of {0} -q -a_nodata none -stats {1} {2}'.format(out_format, out_vrt, outmosaic)]
     #status = execute_cmd(cmd_list)
-    arcpy.MosaicToNewRaster_management(in_vrt_rasters, outmosaic_path, outmosaic_name, "#" ,"32_BIT_FLOAT", "#" ,"1", "LAST")
+    #arcpy.MosaicToNewRaster_management(in_vrt_rasters, outmosaic_path, outmosaic_name, "#" ,"32_BIT_FLOAT", "#" ,"1", "LAST")
+    arcpy.Mosaic_management(inputs=in_vrt_rasters,
+                            target=outmosaic_path+"\\"+outmosaic_name,
+                            mosaic_type="LAST",
+                            colormap="#", 
+                            background_value="#", 
+                            nodata_value="#", 
+                            onebit_to_eightbit="#", 
+                            mosaicking_tolerance="#", 
+                            MatchingMethod="#")
     if status is "E":
         print("gdal_translate Error")
     else:
