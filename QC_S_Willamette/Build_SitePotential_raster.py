@@ -373,15 +373,15 @@ if not arcpy.Exists(out_raster4):
             del block_array
             del raster4_block
                     
-    #arcpy.MosaicToNewRaster_management(input_rasters=raster4_names,
-    #                                   output_location=working_dir,
-    #                                   raster_dataset_name_with_extension=out_raster4,
-    #                                   pixel_type='16_BIT_UNSIGNED',
-    #                                   number_of_bands=1)
+    arcpy.MosaicToNewRaster_management(input_rasters=raster4_names,
+                                       output_location=working_dir,
+                                       raster_dataset_name_with_extension=out_raster4,
+                                       pixel_type='16_BIT_UNSIGNED',
+                                       number_of_bands=1)
     
     # Rebuild the attribute table because it does not seem to 
     # get compleated in the process above
-    #arcpy.BuildRasterAttributeTable_management(in_raster=out_raster4, overwrite="Overwrite")
+    arcpy.BuildRasterAttributeTable_management(in_raster=out_raster4, overwrite="Overwrite")
         
     # Remove temporary files
     if arcpy.Exists(out_raster4):
