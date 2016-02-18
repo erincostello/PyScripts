@@ -44,7 +44,7 @@ isExportable= "false"
 name="CWP Effective Shade v1"
 attribution="Oregon DEQ, CWP" 
 attributionLink=None
-description="CWP Southern Willamette pilot project. Effective shade model results for current condtion and site potential"
+description="CWP Southern Willamette pilot project. Effective shade model results for current condition and site potential"
 
 with open(login_file) as f:    
     login_data = json.load(f)
