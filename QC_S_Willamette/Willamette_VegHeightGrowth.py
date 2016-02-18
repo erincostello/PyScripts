@@ -23,11 +23,11 @@ Farr, W.A. 1984. Site index and height growth curves for unmanaged even-aged sta
 Western hemlock and Sitka spruce in southeast Alaska. Research Paper. PNW-326.
 U.S. Department of Agriculture, Forest Service, Pacific Northwest Forest and Range Experiment Station. Portland, OR.
 
-Keyser, C.E. 2008a (revised June 16, 2015). Pacific northwest coast (PN) variant overview –
+Keyser, C.E. 2008a (revised June 16, 2015). Pacific northwest coast (PN) variant overview
 forest vegetation simulator. Internal Report Fort Collins, CO: U.S. Department of Agriculture, Forest
 Service, Forest Management Service Center.
 
-Keyser, C.E. 2008b (revised June 16, 2015). Westside cascades (WC) variant overview –
+Keyser, C.E. 2008b (revised June 16, 2015). Westside cascades (WC) variant overview
 forest vegetation simulator. Internal Report. Fort Collins, CO: U.S. Department of Agriculture, Forest
 Service, Forest Management Service Center.
 
@@ -75,7 +75,7 @@ canopy_cover = 0.85
 overhang = 0
 
 def str2bool(val):
-    """Converts a True string to the cooresponding
+    """Converts a 'True' string to the cooresponding
     python boolean True value. If the string has any other values,
     False will be returned."""
     return val.lower() in ("true")
@@ -300,7 +300,7 @@ lccode16_dict = read_csv_to_dict(dirpath, lccode16_dict_csv)
 lccodes_list = read_csv_to_list(dirpath, lccode_current)
 
 # This is an alternative method.
-# Instead of reading in and existing lccodes csv
+# Instead of reading in an existing lccodes csv
 # I build a single set codes that cover all the possible values
 #---------------------------------------------------------
 # This is the 16bit codes without height
