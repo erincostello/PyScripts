@@ -1,22 +1,17 @@
+"""
+Walks directories looking for bare earth (BE), 
+hightest hit (HH), or vegetation height (VH) raster data. Makes an 
+inventory of the raster location, name, the year it 
+was collected, which project it is assocated with, the prjoection,
+cleans up the file name, tries to identify the quad, and
+reconciles naming conflicts. A geo filter function is used to
+limit processing to specfic areas of interest.
 
-# This script walks directories looking for bare earth (BE), 
-# hightest hit (HH), or vegetation height (VH) raster data. It makes an 
-# inventory of the raster location for each raster type, the year it 
-# was collected, cleans up the file name, and reconciles naming conflicts.
-# It also filters based on geographic locations.
+Outputs are a comma delimited text files of the raster inventory.
+Output fields include: status, name, path, project name, year
+projection, Ohio quad name, clean name, new name, raster format.
 
-# The output is a csv information with organized this way:
-# header = ["STATUS", "NAME", "PATH", "PROJECT", "YEAR", "NAMECLEAN", "NAMENEW", "TYPE"]
-
-# 0 Processing status
-# 1 Raster Name
-# 2 path to raster
-# 3 the AOI project name
-# 4 Year LiDAR was acquired
-# 5 NameClean
-# 6 NewName
-# 7 image
-
+"""
 import arcpy
 import os
 import csv
@@ -26,17 +21,25 @@ from osgeo import gdal
 from collections import defaultdict
 from operator import itemgetter
 
-# output csv files, (if these files already exist)
-csv_be = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new2_BE_rasters.csv"
-csv_hh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new2_HH_rasters.csv"
-csv_vh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Willamette_new2_VH_rasters.csv"
+# -- Start Inputs ------------------------------------------------------
+
+# output csv files
+csv_be = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_BE_rasters.csv"
+csv_hh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_HH_rasters.csv"
+csv_vh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_VH_rasters.csv"
+
+# if overwrite_csv = False an existing output csv should be present 
+# it reads in the data and appends any new data found 
+# It does not check for duplicate paths
+overwrite_csv = True
+use_newname = True
 
 # input to use as an existing raster_list
 #in_be_shp =  r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWilamette\VH_footprints_20150316.shp"
 #in_hh_shp =
 #in_vh_shp = 
 
-# input csv file indicating which year the project was flown
+# input comma delimited text file indicating which year the project was flown
 csv_year =  r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\path_by_year_20150825.csv"
 
 # search and replace strings for veght (some files use the longer prefix)
@@ -49,102 +52,99 @@ keep_hh = ["hh", "high"]
 keep_vh = ["vh", "veght", "veg_height"]
 
 # ouput csv header
-header = ["STATUS", "NAME", "PATH", "PROJECT", "YEAR", "NAMECLEAN", "NAMENEW", "TYPE"]
+header = ["STATUS", "NAME", "PATH", "PROJECT", "YEAR", "PROJ", "QUAD", "NAMECLEAN", "NAMENEW", "FORMAT"]
 
 # output column assignments
 status_col = 0
 name_col = 1
 path_col = 2
-proj_col = 3
+pjct_col = 3
 year_col = 4
-clean_col = 5
-new_name_col = 6
-type_col = 7
+proj_col = 5
+quad_col = 6
+clean_col = 7
+new_name_col = 8
+format_col = 9
 
-# if overwrite_csv = False an existing output csv should be present 
-# it reads in the data and appends any new data found 
-# It does not check for duplicate paths
-overwrite_csv = True
-
-cleannames = True
-newnames = True
-geofilter = True
+# use a geo filter?
+use_geofilter = True
 
 geo_field_name = "HUC_8"
-geo_area = "'17090001','17090002','17090003','17090004','17090005','17090006'"
+
+# Mid Coast
+geo_area = "'17100204','17100205','17100206','17100207'"
+
+# The folders to walk to look for raster data
+workspaces = [r"\\DEQWQNAS01\Lidar01\PDX-MTHood",
+              r"\\DEQWQNAS01\Lidar01\Yaquina_Block", 
+              r"\\DEQWQNAS01\Lidar01\WillametteValley",
+              r"\\DEQWQNAS01\Lidar01\SouthCoast",
+              r"\\DEQWQNAS01\Lidar03\Central_Coast_Range",
+              r"\\DEQWQNAS01\Lidar04\OLC_NORTH_COAST_2009",
+              r"\\DEQWQNAS01\Lidar05\OLC_SCAPPOOSE_2013",
+              r"\\DEQWQNAS01\Lidar05\OLC_TILLAMOOK_YAMHILL_2012",
+              r"\\DEQWQNAS01\Lidar05\OLC_YAMBO_2010",
+              r"\\DEQWQNAS01\Lidar06\OLC_LANE_COUNTY_2014"]
+
+# Southern Willamette
+#geo_area = "'17090001','17090002','17090003','17090004','17090005','17090006'"
+
+#workspaces = [r"\\DEQWQNAS01\Lidar01\PDX-MTHood",
+        #r"\\DEQWQNAS01\Lidar01\WillametteValley",
+        #r"\\DEQWQNAS01\Lidar01\Blue_River\Other_Products\OGIC",
+        #r"\\DEQWQNAS01\Lidar03\Central_Coast_Range",
+        #r"\\DEQWQNAS01\Lidar03\HJAndrews\Other_Products\OGIC",
+        #r"\\DEQWQNAS01\Lidar03\OLC_CLACKAMOLE_2013",
+        #r"\\DEQWQNAS01\Lidar04\OLC_NORTH_COAST_2009",
+        #r"\\DEQWQNAS01\Lidar05\2012_FallCreek_MiddleFork\RASTERS\OGIC",
+        #r"\\DEQWQNAS01\Lidar05\OLC_GREEN_PETER_2012",
+        #r"\\DEQWQNAS01\Lidar05\OLC_SCAPPOOSE_2013",
+        #r"\\DEQWQNAS01\Lidar05\OLC_TILLAMOOK_YAMHILL_2012",
+        #r"\\DEQWQNAS01\Lidar05\OLC_YAMBO_2010",
+        #r"\\DEQWQNAS01\Lidar06\OLC_LANE_COUNTY_2014"]
 
 # List of directories to search
 #workspaces = [r"\\DEQWQNAS01\Lidar01",
-        #r"\\DEQWQNAS01\Lidar02",
-        #r"\\DEQWQNAS01\Lidar03",
-        #r"\\DEQWQNAS01\Lidar04",
-        #r"\\DEQWQNAS01\Lidar05",
-        #r"\\DEQWQNAS01\Lidar06"]
-        
-workspaces = [r"\\DEQWQNAS01\Lidar01\PDX-MTHood",
-        r"\\DEQWQNAS01\Lidar01\WillametteValley",
-        r"\\DEQWQNAS01\Lidar03\Blue_River\Other_Products\OGIC",
-        r"\\DEQWQNAS01\Lidar03\Central_Coast_Range",
-        r"\\DEQWQNAS01\Lidar03\HJAndrews\Other_Products\OGIC",
-        r"\\DEQWQNAS01\Lidar03\OLC_CLACKAMOLE_2013",
-        r"\\DEQWQNAS01\Lidar04\NorthCoast",
-        r"\\DEQWQNAS01\Lidar05\2012_FallCreek_MiddleFork\RASTERS\OGIC",
-        r"\\DEQWQNAS01\Lidar05\OLC_GREEN_PETER_2012",
-        r"\\DEQWQNAS01\Lidar05\OLC_SCAPPOOSE_2013",
-        r"\\DEQWQNAS01\Lidar05\OLC_TILLAMOOK_YAMHILL_2012",
-        r"\\DEQWQNAS01\Lidar05\OLC_YAMBO_2010",
-        r"\\DEQWQNAS01\Lidar06\OLC_LANE_COUNTY_2014"]
+    #r"\\DEQWQNAS01\Lidar02",
+    #r"\\DEQWQNAS01\Lidar03",
+    #r"\\DEQWQNAS01\Lidar04",
+    #r"\\DEQWQNAS01\Lidar05",
+    #r"\\DEQWQNAS01\Lidar06"]
+
+# -- End Inputs --------------------------------------------------------
 
 # Disregard any folder with the name in the ignore list
 ignore = ["POINT", "REPORT", "LAS", "LAZ", "VEC", "SHAP", "ASC", "TIN","INTEN",
           "DEN","HILLS","HL", "HILSD", "HS", "ORTHO", "PHOTO","TRAJ", "RECYCLER",
           "System Volume Information","Lower_Columbia","USFS_Original",
-          "Yamhill_DEQ","Deschutes_from_USFS_old", "XXX"]
+          "Yamhill_DEQ","Deschutes_from_USFS_old", "XXX", ".bnd"]
 
-def build_raster_list_from_shp(in_shp):
-    """Builds a sorted list of each raster to be processed.
-    shp must contain fields titled Year, Path, Name, NameClean, and NameNew"""
-    
-    # Read the shapefile
-    source = ogr.Open(in_shp, 1)
-    fc = source.GetLayer()
-    # Pull the path, year, and raster file name. 
-    # The second name is a new name when there are duplicates
-    raster_list = [[feature.GetField("Year"),
-                  feature.GetField("Path"),
-                  feature.GetField("Name"),
-                  feature.GetField("NameClean"),
-                  feature.GetField("NameNew")] for feature in fc]
-    source = None
-    
-    ## Add a cols for processing status, sort order, and raster format
-    raster_list = [["#"] + raster_list[n] + ["#"] for n in range(0, len(raster_list))]
-    
-    # sort the list by year and then NewName
-    #raster_list = sorted(raster_list, key=itemgetter(0, 4), reverse=False) 
-    
-    return(raster_list)
+def nested_dict(): 
+    """Build a nested dictionary"""
+    return defaultdict(nested_dict)
 
 def  build_raster_list_from_csv(csvfile, status_col, name_col, path_col,
-                                year_col, proj_col, name_clean_col,
-                                new_name_col, type_col):
-    """Read from an existing csv, and pull infor for each raster to be
+                                pjct_col, year_col, proj_col, quad_col,
+                                clean_col, new_name_col, format_col):
+    """Read from an existing csv, and pulls info for each raster to be
     processed into a sorted list. csv must contain columns with this info
-    Processing status, file name, directory path, year, project name,
-    Name Clean, and Name New, file type."""
+    Processing status, file name, directory path, project name, year,
+    projection, ohio code, Name Clean, Name New, raster file type."""
+    
     csv_list = read_csv(csvfile, skipheader = True)
-    # Pull the path, year, and raster file name. 
+    
     raster_list = [[row[status_col],
                     row[name_col],
                     row[path_col],
+                    row[pjct_col],
                     row[year_col],
-                    row[proj_col], 
-                    row[name_clean_col],
+                    row[proj_col],
+                    row[quad_col], 
+                    row[clean_col],
                     row[new_name_col],
-                    row[type_col]] for row in csv_list]
+                    row[format_col]] for row in csv_list]    
         
     return(raster_list)
-
 
 def read_csv_dict(csvfile, key_col, value_col, skipheader = True):
     """Reads an input csv file and returns a dictionary with
@@ -163,10 +163,11 @@ def read_csv(csvfile, skipheader = False):
         csvlist = [row for row in reader]
     return(csvlist)
 
-def write_csv(csvlist, csvfile):
+def write_csv(csvlist, csvheader, csvfile):
     """write the input list to csv"""
     with open(csvfile, "wb") as f:
         writer = csv.writer(f)
+        writer.writerow(csvheader)        
         for row in csvlist:
             writer.writerow(row)
 
@@ -176,35 +177,46 @@ def get_index_of_duplicate_names(name_list):
         dupdict[item].append(i)
     return ((indx) for key, indx in dupdict.items() if len(indx)>1)
 
-def clean_names(raster_list, name_col, year_col, clean_col):
+def clean_name(filename):
     '''Cleans up the filename putting everything in lower case, removes
-    underscores, and strips unique alpha letters from the end of ohio code
-    quad names'''
+    underscores, and strips raster prefix and unique alpha letters from
+    the end of ohio code quad names'''
     
-    # Check to see if the list is empty
-    if raster_list:
-        # Clean up the name and copy into a new list
-        for i in range(0, len(raster_list)):
-            mod_name1 = raster_list[i][name_col].lower()
-            mod_name1 = mod_name1.replace("_", "")
-            for this_string in str_search_list:
-                mod_name1 = mod_name1.replace(this_string, replace_str)
-            mod_name1 = mod_name1.split('.',1)[0]
+    name_mod = filename.lower()
+    name_mod = name_mod.replace("_", "")
+    # remove these raster prefix
+    for this_string in ["vh", "veght", "veg_height",
+                        "be", "bare",
+                        "hh", "high", "q"]:
+        
+        name_mod = name_mod.replace(this_string, "")
+        
+    # This removes a file extension e.g. .img
+    name_mod = name_mod.split('.',1)[0]
+    
+    # Identify if the name is an ohio code          
+    if (len(name_mod) == 7 and
+        name_mod[0:4].isdigit() and
+        name_mod[5].isalpha() and
+        name_mod[6].isdigit()):
+        
+        quad_key = name_mod
+        
+    elif (len(name_mod) == 8 and
+          name_mod[0:4].isdigit() and
+          name_mod[5].isalpha() and
+          name_mod[6].isdigit() and
+          name_mod[7].isalpha()):
             
-            # Identify if the name is an ohio code and has a letter at the end eg "vh45123d4a"          
-            if (len(mod_name1) == 10 and
-                    mod_name1[0:1].isalpha() is True and
-                    mod_name1[2:6].isdigit() is True and
-                    mod_name1[7].isalpha() is True and
-                    mod_name1[8].isdigit() is True and
-                    mod_name1[9].isalpha() is True):
-                
-                # Remove letter at end if it has one "vh45123d4"
-                raster_list[i][clean_col] =  mod_name1[:-1]
-            else:
-                raster_list[i][clean_col] = mod_name1
-                
-    return raster_list
+        # Remove letter at end e.g. "45123d4"
+        quad_key = name_mod[:-1]
+        
+    else:
+        # Note an Ohio code
+        quad_key = name_mod
+        
+    return quad_key
+
 
 def new_names(raster_list, year_col, clean_col, new_name_col):
     '''Reconciles duplicate quad names and assigns an alpha letter
@@ -268,7 +280,7 @@ def geo_filter(raster_list, geo_field_name, geo_area, clean_col):
             row[clean_col][7].isalpha() is True and
             row[clean_col][8].isdigit() is True):
             
-            if any(quad.lower() in row[clean_col] for quad in myquads):
+            if any(quad.lower() == row[clean_col][2:] for quad in myquads):
                 keep_rasters.append(row)
         else:
             # not an ohio code, keep anyway
@@ -279,25 +291,29 @@ def geo_filter(raster_list, geo_field_name, geo_area, clean_col):
 rasters_be = []
 rasters_hh = []
 rasters_vh = []
-yeardict = read_csv_dict(csv_year, key_col=0, value_col=2, skipheader=True)
-projdict = read_csv_dict(csv_year, key_col=0, value_col=1, skipheader=True)
 
-if overwrite_csv is False:
+yeardict = read_csv_dict(csv_year, key_col=0, value_col=2, skipheader=True)
+pjctdict = read_csv_dict(csv_year, key_col=0, value_col=1, skipheader=True)
+
+if not overwrite_csv:
     rasters_be = build_raster_list_from_csv(csv_be, status_col, name_col,
-                                            path_col, year_col, proj_col,
-                                            name_clean_col, new_name_col,
-                                            type_col)
+                                            path_col, pjct_col, year_col,
+                                            proj_col, quad_col,
+                                            clean_col, new_name_col,
+                                            format_col)
     
     rasters_hh = build_raster_list_from_csv(csv_hh, status_col, name_col,
-                                            path_col, year_col, proj_col,
-                                            name_clean_col, new_name_col,
-                                            type_col)
+                                            path_col, pjct_col, year_col,
+                                            proj_col, quad_col,
+                                            clean_col, new_name_col,
+                                            format_col)
     
     rasters_vh = build_raster_list_from_csv(csv_vh, status_col, name_col,
-                                            path_col, year_col, proj_col,
-                                            name_clean_col, new_name_col,
-                                            type_col)
-    
+                                            path_col, pjct_col, year_col,
+                                            proj_col, quad_col,
+                                            clean_col, new_name_col,
+                                            format_col)
+
 for workspace in workspaces:
     for dirpath, dirnames, filenames in arcpy.da.Walk(workspace,
                                                       topdown=True,
@@ -315,58 +331,70 @@ for workspace in workspaces:
             for filename in filenames:
                 if all(word.lower() not in filename.lower() for word in ignore):
                     year = [value for key, value in yeardict.items() if dirpath.startswith(key)]
-                    proj = [value for key, value in projdict.items() if dirpath.startswith(key)]
+                    pjct = [value for key, value in pjctdict.items() if dirpath.startswith(key)]
+                    proj = arcpy.Describe(os.path.join(dirpath, filename)).spatialReference.name
                     
                     if not year:
                         year = ["NA"]
-                        proj = ["NA"]
-                    rasters_be.append(["#", filename, os.path.join(dirpath, filename), proj[0], year[0], None, None, "#"])
+                        pjct = ["NA"]
+                        
+                    quad_key = clean_name(filename)
+                    nameclean = "be" + quad_key
+                    
+                    rasters_be.append(["#", filename,
+                                       dirpath,
+                                       pjct[0], year[0], proj,
+                                       quad_key, nameclean, None, None])
                 
         if any(word.lower() in dirpath.lower() for word in keep_hh):   
             for filename in filenames:
                 if all(word.lower() not in filename.lower() for word in ignore):
                     year = [value for key, value in yeardict.items() if dirpath.startswith(key)]
-                    proj = [value for key, value in projdict.items() if dirpath.startswith(key)]
+                    pjct = [value for key, value in pjctdict.items() if dirpath.startswith(key)]
+                    proj = arcpy.Describe(os.path.join(dirpath, filename)).spatialReference.name
                     
                     if not year:
                         year = ["NA"]
-                        proj = ["NA"]
-                    rasters_hh.append(["#", filename, os.path.join(dirpath, filename), proj[0], year[0], None, None, "#"])
+                        pjct = ["NA"]
+                        
+                    quad_key = clean_name(filename)
+                    nameclean = "hh" + quad_key
+                    rasters_hh.append(["#", filename,
+                                       dirpath,
+                                       pjct[0], year[0], proj,
+                                       quad_key, nameclean, None, None])
         
         if any(word.lower() in dirpath.lower() for word in keep_vh):   
             for filename in filenames:
                 if all(word.lower() not in filename.lower() for word in ignore):
                     year = [value for key, value in yeardict.items() if dirpath.startswith(key)]
-                    proj = [value for key, value in projdict.items() if dirpath.startswith(key)]
+                    pjct = [value for key, value in pjctdict.items() if dirpath.startswith(key)]
+                    proj = arcpy.Describe(os.path.join(dirpath, filename)).spatialReference.name
                     
                     if not year:
                         year = ["NA"]
-                        proj = ["NA"]
-                    rasters_vh.append(["#", filename, os.path.join(dirpath, filename), proj[0], year[0], None, None, "#"])        
+                        pjct = ["NA"]
+                        
+                    quad_key = clean_name(filename)
+                    nameclean = "vh" + quad_key    
+                    rasters_vh.append(["#", filename,
+                                       dirpath,
+                                       pjct[0], year[0], proj,
+                                       quad_key, nameclean, None, None])
 
 # check for duplicate names
-if cleannames is True:
-    rasters_be = clean_names(rasters_be, name_col, year_col, clean_col)
-    rasters_hh = clean_names(rasters_hh, name_col, year_col, clean_col)
-    rasters_vh = clean_names(rasters_vh, name_col, year_col, clean_col)
-
-if newnames is True:
+if use_newname:
     rasters_be = new_names(rasters_be, year_col, clean_col, new_name_col)
     rasters_hh = new_names(rasters_hh, year_col, clean_col, new_name_col)
     rasters_vh = new_names(rasters_vh, year_col, clean_col, new_name_col)
 
-if geofilter is True:
+if use_geofilter:
     rasters_be = geo_filter(rasters_be, geo_field_name, geo_area, clean_col)
     rasters_hh = geo_filter(rasters_hh, geo_field_name, geo_area, clean_col)
     rasters_vh = geo_filter(rasters_vh, geo_field_name, geo_area, clean_col)
 
 print("writing to csv")
-
-rasters_be.insert(0, header)
-rasters_hh.insert(0, header)
-rasters_vh.insert(0, header)
-
-write_csv(rasters_be, csv_be)
-write_csv(rasters_hh, csv_hh)
-write_csv(rasters_vh, csv_vh)
+write_csv(rasters_be, header, csv_be)
+write_csv(rasters_hh, header, csv_hh)
+write_csv(rasters_vh, header, csv_vh)
 print("Done")

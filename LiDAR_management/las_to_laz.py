@@ -1,18 +1,17 @@
-# This script 
-# 1). walks a directory looking for .las or .laz files.
-# 2). Outputs a csv file with the path to the files it finds
-# 3). Converts the file using LASzip 
-# 4). Deletes the .las or .laz file after conversion
-# 5). Logs process in the csv output so you can track progress.
-# By Ryan Michie
+"""
+Walks directories looking for for .las or .laz files. Outputs a comma
+delimited text file with the path to the files it finds. Converts the
+files using LASzip and deletes the .las or .laz file after conversion.
+Logs progress in the comma delimited text file so you can track progress.
+"""
 
 from __future__ import print_function
 import csv
 import os
 import subprocess
 
+# -- Start Inputs ------------------------------------------------------
 
-# inputs ##################################################
 walkpath = True
 LASzip_conversion = True
 
@@ -49,7 +48,7 @@ ignore = ["REPORT", "VEC", "SHAP", "ASC", "TIN", "INTEN", "RASTER",
           "RECYCLER", "System Volume Information","Lower_Columbia",
           "USFS_Original","Yamhill_DEQ","Deschutes_from_USFS_old", "XXX"]
 
-# End ##################################################
+# -- End Inputs --------------------------------------------------------
 
 def read_csv(csvfile, skipheader = False):
     """Reads an input csv file and returns the data as a list"""

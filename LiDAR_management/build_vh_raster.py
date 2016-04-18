@@ -23,8 +23,10 @@ from arcpy import env
 from arcpy.sa import *
 arcpy.CheckOutExtension("Spatial")
 
+build_vh = True
+
 # dirctory and file name of the output raster inventory
-out_csv_file = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_paths.txt"
+out_csv_file = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\North_Coast_paths.txt"
 
 # input csv file containting project names and which year the area was flown
 csv_year =  r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\path_by_year_20150825.csv"
@@ -40,11 +42,15 @@ workspaces = [r"\\DEQWQNAS01\Lidar01\PDX-MTHood",
               r"\\DEQWQNAS01\Lidar05\OLC_YAMBO_2010",
               r"\\DEQWQNAS01\Lidar06\OLC_LANE_COUNTY_2014"]
 
+workspaces = [r"\\DEQWQNAS01\Lidar04\NorthCoast"]
+
 # attribute field name to query for geo filter
-geo_field_name = "HUC_8"
+#geo_field_name = "HUC_8"
+geo_field_name = "STATE"
 
 # attribute values to query # Mid Coast
-geo_area = "'17100204','17100205','17100206','17100207'"
+#geo_area = "'17100204','17100205','17100206','17100207'"
+geo_area = "'OR','OR WA','WA OR'"
 
 # Disregard any folder with the name in the ignore list
 ignore = ["POINT", "REPORT", "LAS", "LAZ", "VEC", "SHAP", "ASC", "TIN","INTEN",
@@ -263,15 +269,16 @@ for project_area, quad_keys in quad_dict.items():
             # Set snap raster environment
             arcpy.env.snapRaster = be_path            
                   
-            try:
-                vh = Minus(hh_path, be_path)
-                vh.save(vh_path)
-                arcpy.BuildPyramids_management(vh_path, "-1", "NONE", "BILINEAR",
-                                               "DEFAULT", "75", "SKIP_EXISTING")
-                row[2] = vh_path
-                row[0] = 'Complete'
-            except:
-                row[0] = 'Error'
+            if build_vh:
+                try:
+                    vh = Minus(hh_path, be_path)
+                    vh.save(vh_path)
+                    arcpy.BuildPyramids_management(vh_path, "-1", "NONE", "BILINEAR",
+                                                   "DEFAULT", "75", "SKIP_EXISTING")
+                    row[2] = vh_path
+                    row[0] = 'Complete'
+                except:
+                    row[0] = 'Error'
         
         elif ('BE' in types.keys() and
             'HH' in types.keys() and
