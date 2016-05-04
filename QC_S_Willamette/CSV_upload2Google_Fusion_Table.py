@@ -182,16 +182,16 @@ flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
 credentials = get_credentials()
 http = credentials.authorize(httplib2.Http())
 
-service = build(serviceName='fusiontables', version='v2', http=http)
- #               developerKey= api_key)
+service = build(serviceName='fusiontables', version='v2', http=http, 
+                developerKey= api_key)
 
 col_list = format_columns()
 table_id = insert_new_table()
 print("Insert Table Table ID {0}".format(table_id))
 #numRowsReceived = insert_new_rows()
 #print("Insert Rows status: {0}. Number of rows uploaded {1}".format(return_status, numRowsReceived))
-style_id = insert_style()
-print("Insert Style. Style_ID {1}".format(style_id))
+#style_id = insert_style()
+#print("Insert Style. Style_ID {1}".format(style_id))
 
 
 
