@@ -55,7 +55,20 @@ def AddFields(shpfile, AddFieldsList):
         layer.CreateField(new_field)
     source = None # Close the Shapefile
 
-
+def raster_extent(raster):
+    
+    data = gdal.Open(raster)
+    gt = data.GetGeoTransform()
+    rows = data.RasterYSize
+    cols = data.RasterXSize
+    
+    raster_x_min = gt[0]
+    raster_y_min = gt[3] + (rows * gt[5])
+    raster_x_max = gt[0] + (cols * gt[1])
+    raster_y_max = gt[3]
+    
+    return raster_x_min, raster_y_min, raster_x_max, raster_y_max
+    
 def ReadRaster(raster):
     # Read a Raster
     data = gdal.Open(raster)
@@ -88,7 +101,6 @@ def CoordToArray(easting, northing, gt):
     xy.append((easting - gt[0])/ gt[1])  # col
     xy.append((northing - gt[3]) / gt[5])  # row
     return xy
-
 
 data = ReadRaster(raster)
 arry, gt, proj, rows, cols = RasterToArray(raster)
