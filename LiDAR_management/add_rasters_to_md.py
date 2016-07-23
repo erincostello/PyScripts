@@ -3,7 +3,7 @@ Adds rasters identifed in a comma delimited text file to an ESRI mosaic
 dataset. The text file is produced by running the
 script "find_raster_path.py". A mosaic dataset must already exist.
 A geo filter function can be used to limit processing to specfic areas
-of interest. The rasterscan also be copied to a new directory and
+of interest. The rasters can also be copied to a new directory and
 renamed based on a field in the text file.
 
 """
