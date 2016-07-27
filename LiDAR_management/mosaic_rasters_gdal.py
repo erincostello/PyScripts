@@ -1,5 +1,12 @@
+
+"""
+Adds rasters identifed in a comma delimited text file to a gdal VRT
+and build a mosaic raster. The text file is produced by running the
+script "find_raster_path.py". The rasters can be reprojected, reclassed,
+copied to a new directory and renamed based on a field in the text file.
+"""
+
 from __future__ import print_function
-import arcpy
 import os
 import csv
 import subprocess
@@ -11,44 +18,49 @@ from osgeo import ogr
 from osgeo import gdal
 from osgeo import gdal_merge
 
-header = ["STATUS", "NAME", "PATH", "YEAR", "NAMECLEAN", "NAMENEW", "TYPE"]
+# ouput csv header
+header = ["STATUS", "NAME", "PATH", "PROJECT", "YEAR", "PROJ", "QUAD", "NAMECLEAN", "NAMENEW", "FORMAT"]
 
 status_col = 0
 order_col = 1
-year_col = 2
-path_col = 3
-name_col = 4
-new_name_col = 5
-type_col = 6
+path_col = 2
+year_col = 4
+name_col = 7
+new_name_col = 8
 
 # To run the gdal commands you first have to set the path and GDAL_DATA variable in environments.
 # C:\Python27\Lib\site-packages\osgeo
 # GDAL_DATA C:\Python27\Lib\site-packages\osgeo\data\gdal
 
-#in_gdbpath = r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWilamette\LiDAR.gdb"
-#in_gdb_fc = "VH_footprints"
+# input comma seperated text file w/ inventory of rasters going into md
 in_csvfile = r"\\DEQWQNAS01\Lidar08\LiDAR\YEAR\Year_quad_list_input.csv"
-#in_shp =  r"C:\WorkSpace\Quantifying_Conservation_2014\SouthernWilamette\VH_footprints_20150316.shp"
 proj_final = 'EPSG:2992'
 outpath_warp = r"N:\LiDAR\BE\new"
-#outpath_reclass = r"\\DEQWQNAS01\Lidar08\LiDAR\YEAR\new"
+
+# this is the directory holding the reclass rasters
+outpath_reclass = r"\\DEQWQNAS01\Lidar08\LiDAR\YEAR\new"
+
 out_vrt = r"N:\LiDAR\BE\new\BE.vrt"
+
+# output comma seperated text file w/ inventory of reclass rasters
 outcsvfile = r"N:\LiDAR\BE\new\BE_quad_list_output_new.csv"
+
+# output comma seperated text file w/ inventory of rasters in vrt
 outtxtfile = r"N:\LiDAR\BE\new\BE_mosaic_list.txt"
+
 outmosaic = r"N:\LiDAR\BE\BE_mosaic.img"
 outmosaic_path = r"N:\LiDAR\BE"
 outmosaic_name = r"BE_mosaic.img"
 infile_type = "\\hdr.adf"
-#infile_type = ""
 out_format = "HFA"
 out_ext = ".img"
+
 overwrite_csv = False
 buildwarp = False
 buildreclass = False
 buildvrt_list = True
 buildvrt = True
 buildmosaic = False
-buildpyramids = False
 rc_lower = -50000
 rc_upper = 50000
 
@@ -91,52 +103,6 @@ def is_number(s):
     except ValueError:
         return False            
 
-def build_raster_list_from_shp(in_shp):
-    """Builds a sorted list of each raster to be processed.
-    shp must contain fields titled Year, Path, and Name"""
-    
-    # Read the shapefile
-    source = ogr.Open(in_shp, 1)
-    fc = source.GetLayer()
-    # Pull the path, year, and raster file name. 
-    # The second name is a new name when there are duplicates
-    raster_list = [[feature.GetField("Year"),
-                  feature.GetField("Path"),
-                  feature.GetField("Name"),
-                  feature.GetField("NewName")]for feature in fc]
-    source = None
-    
-    # sort the list by year and then NewName
-    raster_list = sorted(raster_list, key=itemgetter(0, 3), reverse=False)
-    
-    # Add a cols for processing status, sort order, and raster format
-    raster_list = [["#", n] + raster_list[n] + ["#"] for n in range(0, len(raster_list))]
-    
-    return(raster_list)
-
-def  build_raster_list_from_gdb(in_gdb_path, in_gdb_fc):
-    """Read a feature class from a ESRI GDB, and pull the path, year,
-    and raster file names of each raster to be processed into a sorted list.
-    GDB must contain a fields titled Year, Path, and Name"""
-    # Does not work ??
-    driver = ogr.GetDriverByName("OpenFileGDB")
-    db = driver.Open(in_gdbpath, 0)
-    fc = db.GetLayer(in_gdb_fc)
-    # Pull the path, year, and raster file name. 
-    # The second name is a new name when there are duplicates
-    raster_list = [[feature.GetField("Year"),
-                  feature.GetField("Path"),
-                  feature.GetField("Name"),
-                  feature.GetField("NewName")]for feature in fc]
-    
-    # sort the list by year and then NewName
-    raster_list = sorted(raster_list, key=itemgetter(0, 3), reverse=False)
-    
-    # Add a cols for processing status and the sort order
-    raster_list = [["#", n] + raster_list[n] for n in range(0, len(raster_list))]    
-    
-    return(raster_list)
-
 def  build_raster_list_from_csv(csvfile, status_col, year_col, path_col, name_col, new_name_col):
     """Read from a csv, and pull the path, year,
     and raster file names of each raster to be processed into a sorted list.
@@ -170,16 +136,6 @@ def get_nodata_value(raster_path, band, status):
     
     return(nodatavalue,status)
 
-def get_format(raster_list):
-    """Returns the raster list with the output faster format"""
-    n = 0
-    for row in raster_list:
-        out_raster = outpath_warp + "\\" + row[5] + out_ext        
-        raster_list[n][6] = arcpy.Describe(out_raster).format
-        n = n + 1
-    print("done with getting format")
-    return(raster_list)
-
 def execute_cmd(cmd_list):
     """Executes commands to the command prompt using subprocess module.
     Commands must be a string in a list"""
@@ -207,8 +163,6 @@ def execute_cmd(cmd_list):
 
 # get from csv file or build one from a feature class and export to csv
 if overwrite_csv is True:
-    #raster_list = build_raster_list_from_shp(in_shp)
-    #raster_list = build_raster_list_from_gdb(in_gdb_path, in_gdb_fc)
     raster_list = build_raster_list_from_csv(in_csvfile, year_col=0, path_col=1, name_col=2, new_name_col=3)
     write_csv(raster_list, outcsvfile)
 else:
@@ -270,11 +224,6 @@ for row in raster_list:
         n = n + 1
 
 print("done warping")
-
-
-# -- Get the warped raster format for checking later ------------------
-raster_list = get_format(raster_list)
-write_csv(raster_list, outcsvfile)
 
 # -- Reclass the rasters ----------------------------------------------
 n = 0
@@ -401,9 +350,3 @@ if buildmosaic is True:
         print("done mosaicing")
 else:
     print("skipping mosaic")
-
-if buildpyramids is True:
-    print("building pyramids")
-    arcpy.BuildPyramids_management(os.path.join(outmosaic_path, outmosaic_name), "-1", "NONE", "BILINEAR", "DEFAULT", "#", "OVERWRITE" )
-print("script complete")
-
