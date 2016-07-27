@@ -334,6 +334,7 @@ for workspace in workspaces:
                     year = [value for key, value in yeardict.items() if dirpath.startswith(key)]
                     pjct = [value for key, value in pjctdict.items() if dirpath.startswith(key)]
                     proj = arcpy.Describe(os.path.join(dirpath, filename)).spatialReference.name
+                    form = arcpy.Describe(os.path.join(dirpath, filename)).format
                     
                     if not year:
                         year = ["NA"]
@@ -345,7 +346,7 @@ for workspace in workspaces:
                     rasters_be.append(["#", filename,
                                        dirpath,
                                        pjct[0], year[0], proj,
-                                       quad_key, nameclean, None, None])
+                                       quad_key, nameclean, None, form])
                 
         if any(word.lower() in dirpath.lower() for word in keep_hh):   
             for filename in filenames:
