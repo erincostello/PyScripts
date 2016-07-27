@@ -252,7 +252,7 @@ for row in raster_list:
         if inraster_exists is True:
             # Get the no data value
             nodatavalue , status = get_nodata_value(raster_path=inpath, band=1, status=status)
-            cmd_list = ['gdalwarp -t_srs {0} -q -r bilinear -srcnodata {1} -dstnodata {2} -of {3} -overwrite {4} {5}'.format(proj_final, nodatavalue, nodatavalue, out_format, inpath_temp, out_raster)]                
+            cmd_list = ['gdalwarp -t_srs {0} -q -r near -srcnodata {1} -dstnodata {2} -of {3} -overwrite {4} {5}'.format(proj_final, nodatavalue, nodatavalue, out_format, inpath_temp, out_raster)]                
             print("warping "+str(n)+" of "+str(tot)+" "+inpath_temp)
             if status is not "E" and buildwarp is True:
                 status = execute_cmd(cmd_list)
@@ -392,18 +392,9 @@ else:
 # Build the mosaic. Must not have an error in status
 if buildmosaic is True:
     print("building mosaic")
-    #cmd_list = ['gdal_translate -of {0} -q -a_nodata none -stats {1} {2}'.format(out_format, out_vrt, outmosaic)]
-    #status = execute_cmd(cmd_list)
-    #arcpy.MosaicToNewRaster_management(in_vrt_rasters, outmosaic_path, outmosaic_name, "#" ,"32_BIT_FLOAT", "#" ,"1", "LAST")
-    arcpy.Mosaic_management(inputs=in_vrt_rasters,
-                            target=outmosaic_path+"\\"+outmosaic_name,
-                            mosaic_type="LAST",
-                            colormap="#", 
-                            background_value="#", 
-                            nodata_value="#", 
-                            onebit_to_eightbit="#", 
-                            mosaicking_tolerance="#", 
-                            MatchingMethod="#")
+    cmd_list = ['gdal_translate -of {0} -q -a_nodata none -stats {1} {2}'.format(out_format, out_vrt, outmosaic)]
+    status = execute_cmd(cmd_list)
+
     if status is "E":
         print("gdal_translate Error")
     else:
