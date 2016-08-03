@@ -20,6 +20,11 @@ attr_dir = r"F:\SSN_Test\attrbutes.gdb"
 # name of the starting attribute raster
 attr_name = "disturb_agg"
 
+# Output Spatial reference
+# Same as Hydro inptus and attribute raster
+# NAD_1983_HARN_Oregon_Statewide_Lambert_Feet_Intl
+sr = arcpy.SpatialReference(2994)
+
 # These are the raster names needed from the hydro directory
 env.workspace = hydro_dir
 FAC_RCA =  Raster(env.workspace + "\\fac_rca")
@@ -52,6 +57,7 @@ env.cellSize = cell_size
 env.snapRaster = attr_path
 env.extent = attr_path
 env.mask = attr_path
+env.outputCoordinateSystem = sr
 
 def accumulate(attr_raster, fac_raster, fdr_raster, weight=1,
                fill_outlets=False, catchment_raster=None,
