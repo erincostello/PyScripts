@@ -16,7 +16,7 @@ from arcpy import env
 # ArcHydroTools.pth into the base python site packages folder
 import ArcHydroTools
 
-# output director for the hydro outputs
+# output directory for the hydro outputs
 hydro_dir = r"F:\SSN_Test\hydro.gdb"
 
 # True if the DEM will be aggregated to a different resolutiuon

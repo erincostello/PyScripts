@@ -11,13 +11,16 @@ arcpy.CheckOutExtension("spatial")
 from arcpy.sa import *
 from arcpy import env
 
+# directory where the hydro outputs are stored
 hydro_dir = r"F:\SSN_Test\hydro.gdb"
 
+# directory where the attributes and accumulation outputs are stored
 attr_dir = r"F:\SSN_Test\attrbutes.gdb"
 
 # name of the starting attribute raster
 attr_name = "disturb_agg"
 
+# These are the raster names needed from the hydro directory
 env.workspace = hydro_dir
 FAC_RCA =  Raster(env.workspace + "\\fac_rca")
 FAC_RSA =  Raster(env.workspace + "\\fac_rsa")
@@ -32,6 +35,7 @@ OUTLETS = Raster(env.workspace + "\\outlets2")
 CATCHMENT = Raster(env.workspace + "\\catchment")
 RSA_ZONES = Raster(env.workspace + "\\rsa_euc_zone")
 
+# Raster names output to the attribute directory
 env.workspace = attr_dir
 attr_path =  env.workspace + "\\"+ attr_name
 ATTR = Raster(attr_path)
