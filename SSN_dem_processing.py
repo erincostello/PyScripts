@@ -35,8 +35,8 @@ rsa_m = 30
 
 # Output Spatial reference. This should really
 # be the same as the input DEM
-# NAD_1983_2011_Oregon_Statewide_Lambert_Ft_Intl
-sr = arcpy.SpatialReference(6557)
+# NAD_1983_HARN_Oregon_Statewide_Lambert_Feet_Intl
+sr = arcpy.SpatialReference(2994)
 
 env.workspace = hydro_dir
 OUT_BE = env.workspace + "\\be"
@@ -71,6 +71,7 @@ OUT_FDR_EUCQ = env.workspace + "\\fdr_eucq"
 OUT_FDR_EUCQ_OUTLET  = env.workspace + "\\fdr_eucq_outlet"
 
 OUT_RSA_EUC_ZONE = env.workspace + "\\rsa_euc_zone"
+OUT_RSA_Q_ZONE = env.workspace + "\\rsa_q_zone"
 OUT_RSA_EUCQ_ZONE = env.workspace + "\\rsa_eucq_zone"
 
 OUT_RSA_Q_WEIGHT = env.workspace + "\\rsa_q_weight"
@@ -460,9 +461,18 @@ if not arcpy.Exists(OUT_RSA_Q_WEIGHT):
     RSA_Q_WEIGHT.save(OUT_RSA_Q_WEIGHT)
 else:
     RSA_Q_WEIGHT = Raster(OUT_RSA_Q_WEIGHT)
+
+# -- 29. Generate RSA flow distance zone raster -------------------------
+if not arcpy.Exists(OUT_RSA_Q_ZONE):
+    print("RSA flow distance zone raster")
+    
+    RSA_Q_ZONE = Con(in_conditional_raster=(RSA_Q_WEIGHT==1),
+                         in_true_raster_or_constant=CATCHMENT)
+    
+    RSA_Q_ZONE.save(OUT_RSA_Q_ZONE)
     
 
-# -- 29. Generate flow distance RSA FAC raster -------------------------
+# -- 30. Generate flow distance RSA FAC raster -------------------------
 if not arcpy.Exists(OUT_FAC_RSA_Q):
     print("RSA flow distance fac raster")
     
@@ -472,7 +482,7 @@ if not arcpy.Exists(OUT_FAC_RSA_Q):
 
     FAC_RSA_EUCQ.save(OUT_FAC_RSA_Q)
 
-# -- 30. Generate flow distance ARSA FAC raster -------------------------
+# -- 31. Generate flow distance ARSA FAC raster -------------------------
 if not arcpy.Exists(OUT_FAC_ARSA_Q):
     print("ARSA flow distance fac raster")
     
@@ -486,7 +496,7 @@ if not arcpy.Exists(OUT_FAC_ARSA_Q):
 # RSA and ARSA  outputs based on combination of Euclidean and Flow distance
 # ----------------------------------------------------------------------
 
-# -- 31. Reconcile RSA zones and catchments ---------------------------
+# -- 32. Reconcile RSA zones and catchments ---------------------------
 if not arcpy.Exists(OUT_RSA_EUCQ_ZONE):
     print("Reconcile RSA euclidean zones and catchments")
         
@@ -498,7 +508,7 @@ if not arcpy.Exists(OUT_RSA_EUCQ_ZONE):
     RSA_EUCQ_ZONE.save(OUT_RSA_EUCQ_ZONE)
 
 
-# -- 32. Generate a FDR based on the euclidean flow reconciliation ----
+# -- 33. Generate a FDR based on the euclidean flow reconciliation ----
 if not arcpy.Exists(OUT_FDR_EUCQ):
     print("FDR for the euclidean-flow reconciliation ")
         
@@ -510,7 +520,7 @@ if not arcpy.Exists(OUT_FDR_EUCQ):
     FDR_EUCQ.save(OUT_FDR_EUCQ)
 
 
-# -- 33. Generate an euclidean distance flow reconciled flow direction w/ null outlets 
+# -- 34. Generate an euclidean distance flow reconciled flow direction w/ null outlets 
 if not arcpy.Exists(OUT_FDR_EUCQ_OUTLET):
     print("euclidean-flow reconciled flow direction w/ null outlets")
     
@@ -521,7 +531,7 @@ if not arcpy.Exists(OUT_FDR_EUCQ_OUTLET):
 else:
     FDR_EUCQ_OUTLET = Raster(OUT_FDR_EUCQ_OUTLET)
     
-# -- 34. Generate an euclidean distance flow reconciled weight raster --
+# -- 35. Generate an euclidean distance flow reconciled weight raster --
 if not arcpy.Exists(OUT_RSA_EUCQ_WEIGHT):
     print("RSA euclidean-flow reconciled weight raster")
     
@@ -536,7 +546,7 @@ else:
     RSA_EUCQ_WEIGHT = Raster(OUT_RSA_EUCQ_WEIGHT)
     
      
-# -- 35. Generate Euclidean-flow reconciled RSA FAC raster --------------
+# -- 36. Generate Euclidean-flow reconciled RSA FAC raster --------------
 if not arcpy.Exists(OUT_FAC_RSA_EUCQ):
     print("RSA euclidean-flow reconciled fac raster")
     
@@ -546,7 +556,7 @@ if not arcpy.Exists(OUT_FAC_RSA_EUCQ):
 
     FAC_RSA_EUCQ.save(OUT_FAC_RSA_EUCQ)
 
-# -- 36. Generate Euclidean-flow reconciled ARSA FAC raster ------------
+# -- 37. Generate Euclidean-flow reconciled ARSA FAC raster ------------
 if not arcpy.Exists(OUT_FAC_ARSA_EUCQ):
     print("ARSA euclidean-flow reconciled fac raster")
     
