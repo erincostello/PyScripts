@@ -88,14 +88,14 @@ def accumulate(attr_raster, fac_raster, fdr_raster, weight=1,
 # -- RCA -----------------------------------------
 if not arcpy.Exists(OUT_ATTR_RCA):
     print("{0} RCA".format(attr_name))
-    ATTR_ARSA = accumulate(attr_raster=ATTR,
+    ATTR_RCA = accumulate(attr_raster=ATTR,
                            fac_raster=FAC_RCA,
                            fdr_raster=FDR_OUTLET,
                            weight=1, fill_outlets=True,
                            catchment_raster=CATCHMENT,
                            outlet_raster=OUTLETS)
     
-    ATTR_ARSA.save(OUT_ATTR_RCA)
+    ATTR_RCA.save(OUT_ATTR_RCA)
 
 # -- ARCA -----------------------------------------
 if not arcpy.Exists(OUT_ATTR_ARCA):
@@ -109,13 +109,13 @@ if not arcpy.Exists(OUT_ATTR_ARCA):
 # -- RSA -----------------------------------------
 if not arcpy.Exists(OUT_ATTR_RSA):
     print("{0} RSA".format(attr_name))
-    ATTR_ARSA = accumulate(attr_raster=ATTR,
+    ATTR_RSA = accumulate(attr_raster=ATTR,
                            fac_raster=FAC_RSA,
                            fdr_raster=FDR_RSA_OUTLET,
                            weight=RSA_WEIGHT, fill_outlets=True,
                            catchment_raster=RSA_ZONES,
                            outlet_raster=OUTLETS)
-    ATTR_ARSA.save(OUT_ATTR_RSA)
+    ATTR_RSA.save(OUT_ATTR_RSA)
 
 # -- ARSA -----------------------------------------
 if not arcpy.Exists(OUT_ATTR_ARSA):
