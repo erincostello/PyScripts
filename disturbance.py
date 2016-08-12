@@ -29,6 +29,11 @@ Kennedy, R.E., Yang, Z., Cohen W.B. 2010. Detecting trends in forest
 disturbance and recovery using yearly Landsat time series:
 1. LandTrendr - temporal segmentaton algorithms. Remote Sensing of
 Environment. 114(12): 2897-2910.
+
+Kennedy, R.E., Yang, Z., Cohen W.B., Pfaff, E., Braaten, J. Nelson, P.
+2012. Spatial and temporal patterns of firest disturbance and regrowth
+within the area of the Northwest Forest Plan. Remote Sensing of
+Environment. 122: 117-133.
     
 YOD data accessed here:
 ftp://ftp.fsl.orst.edu/pub/landtrendr/nwfp_disturbance_03012011/
