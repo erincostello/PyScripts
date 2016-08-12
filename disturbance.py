@@ -1,7 +1,7 @@
 
 """
 This script generates disturbance rasters where disturbed=1 
-if there is a lack of canopy within a the specified period prior
+if there is a lack of canopy within the specified period prior
 to an index year.
 
 A lack of canopy was identified using the Year of Disturbance (YOD) raster
