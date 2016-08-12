@@ -57,7 +57,7 @@ env.workspace = work_dir
 path_yod = env.workspace + "\\landtrendr_R03012011_yod1_ssn"
 path_nlcd = env.workspace + "\\NLCD_2001_canopy_ssn"
 
-# number of years prior to the index year to be classify 
+# number of years prior to the index year to be classified
 # as disturbed.
 d_periods = [1, 3, 10]
 
@@ -78,6 +78,7 @@ env.extent = path_yod
 if not arcpy.Exists(out_disturb1):
     print("combine YOD and NLCD")
     
+    # YOD = 0 means it was not classifed because there was no change
     DISTURB1 = Con(YOD == 0,
                        in_true_raster_or_constant=NLCD,
                        in_false_raster_or_constant=YOD)    
