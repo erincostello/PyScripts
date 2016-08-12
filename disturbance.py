@@ -4,18 +4,18 @@ This script generates disturbance rasters where disturbed=1
 if there is a lack of canopy within a the specified period prior
 to an index year.
 
-A lack of canopy was identifed using the Year of Disturbance (YOD) raster
+A lack of canopy was identified using the Year of Disturbance (YOD) raster
 (Kennedy et al 2010, Kennedy et al 2012) or the 2001 NLCD canopy cover
-product (Huang et al 2001). The YOD raster identifed the year in which
+product (Huang et al 2001). The YOD raster identified the year in which
 a forested area was disturbed by clearcut, fire, or other
 processes between 1985 and 2008.
 
-YOD is a change detection process so areas of both non-forest and forest
-where no change was detected within the 1985-2008 study
-period were not classified by Kennedy et al (2010) as disturbed.
-In these areas a lack of canopy was identifed if the NLCD 2001 canopy
-cover product (Huang et al 2001) classifed the percent canopy cover
-as being between 0 and 10 percent. This is interpred as an area
+YOD was based on a change detection process so areas of both non-forest
+and forest where no change was detected within the 1985-2008 study
+period were not classified as disturbed by Kennedy et al (2010).
+In these areas a lack of canopy was identified if the NLCD 2001 canopy
+cover product (Huang et al 2001) classified the percent canopy cover
+as being between 0 and 10 percent. This was interpreted as an area
 having minimal canopy cover that did not change status between
 1985 and 2008.
 
@@ -27,11 +27,11 @@ Forestry held in Denver, Colorado, 5-7 November, 2001, 1 disk.
 
 Kennedy, R.E., Yang, Z., Cohen W.B. 2010. Detecting trends in forest
 disturbance and recovery using yearly Landsat time series:
-1. LandTrendr - temporal segmentaton algorithms. Remote Sensing of
+1. LandTrendr - temporal segmentation algorithms. Remote Sensing of
 Environment. 114(12): 2897-2910.
 
 Kennedy, R.E., Yang, Z., Cohen W.B., Pfaff, E., Braaten, J. Nelson, P.
-2012. Spatial and temporal patterns of firest disturbance and regrowth
+2012. Spatial and temporal patterns of forest disturbance and regrowth
 within the area of the Northwest Forest Plan. Remote Sensing of
 Environment. 122: 117-133.
     
