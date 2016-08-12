@@ -97,6 +97,7 @@ for year in years:
             
             rc_table = RemapRange([[0, 10, 1],
                                    [10, 100, "NODATA"],
+                                   [1984, year - d_period, "NODATA"], 
                                    [year - d_period, year, 1],
                                    [year, 2009, "NODATA"]
                                    ])
