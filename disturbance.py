@@ -70,9 +70,9 @@ out_disturb1 = env.workspace + "\\Disturbance_ssn"
 
 # Set env settings
 env.overwriteOutput = True
-env.cellSize = path_yod
-env.snapRaster = path_yod
-env.extent = path_yod
+env.cellSize = path_nlcd
+env.snapRaster = path_nlcd
+env.extent = path_nlcd
 
 # -- Combine YOD and NLCD
 if not arcpy.Exists(out_disturb1):
