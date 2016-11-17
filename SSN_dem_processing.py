@@ -7,6 +7,8 @@ and SSN models.
 from __future__ import print_function
 import arcpy
 
+import time
+
 # Check out Spatial Analyst
 arcpy.CheckOutExtension("spatial")
 from arcpy.sa import *
@@ -17,11 +19,33 @@ from arcpy import env
 import ArcHydroTools
 
 # output directory for the hydro outputs
-hydro_dir = r"F:\SSN_Test\hydro.gdb"
+#hydro_dir = r"F:\SSN_Test\hydro_burn.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Salmon.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Devils_Lake_Frontal.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Siletz.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Yaquina.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Beaver_Creek.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Alsea.gdb"
+hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Alsea_Frontals.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Siuslaw.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Siltcoos.gdb"
 
 # True if the DEM will be aggregated to a different resolutiuon
 agg = True
-agg_factor = 10
+agg_factor = 5
+
+make_sinks = False
+
+# delete files? preprocssing only
+delete_files = False
+# make a refined stream fc
+refine_streams = True
+# Burn Streams?
+burn = True
+burn_stream_fc = hydro_dir + r"\BurnPath"
+burn_buffer = 1
+burn_smooth = 10
+burn_drop = 100
 
 # Square km catchment size where streams initiate
 # Assumes stream initiation at of 0.04 square km via Clarke et al 2008
@@ -36,15 +60,27 @@ rsa_m = 30
 # Output Spatial reference. This should really
 # be the same as the input DEM
 # NAD_1983_HARN_Oregon_Statewide_Lambert_Feet_Intl
-sr = arcpy.SpatialReference(2994)
+#sr = arcpy.SpatialReference(2994)
+sr = arcpy.SpatialReference(6557)
 
 env.workspace = hydro_dir
 OUT_BE = env.workspace + "\\be"
 OUT_BE_AGG = env.workspace + "\\be_agg"
-OUT_FILL = env.workspace + "\\be_fill"
+
+OUT_SINKS = env.workspace + "\\sinks"
+OUT_SINK_DRAINAGE = env.workspace + "\\sink_drainage"
+
+OUT_BE_FILL = env.workspace + "\\be_fill"
+
+OUT_BE_BURN = env.workspace + "\\be_burn"
+OUT_BE_HYDRO_HS = env.workspace + "\\be_fill_hs"
 
 OUT_FDR  = env.workspace + "\\fdr"
 OUT_FAC = env.workspace + "\\fac"
+
+NULL_MASK = env.workspace + "\\null_mask"
+OUT_STREAMS_REFINE = env.workspace + "\\stream_refine"
+OUT_STREAMS_REFINE2 = env.workspace + "\\stream_refine_backup"
 
 OUT_STREAM1 = env.workspace + "\\stream1"
 OUT_STREAM2 = env.workspace + "\\stream2"
@@ -92,10 +128,124 @@ OUT_FAC_ARSA_EUC =  env.workspace + "\\fac_arsa_euc"
 OUT_FAC_ARSA_Q =  env.workspace + "\\fac_arsa_q"
 OUT_FAC_ARSA_EUCQ =  env.workspace + "\\fac_arsa_eucq"
 
+temp1 = env.workspace + "\\APUNIQUEID"
+temp2 = env.workspace + "\\LAYERKEYTABLE"
+temp3 = env.workspace + "\\stream_poly_FS"
+
 # Reset geoprocessing environment settings
 arcpy.ResetEnvironments()
 
-#-- 1. Aggregate -------------------------
+delete_items = [OUT_BE_BURN,
+                OUT_BE_FILL,
+                OUT_FDR, OUT_FAC,
+                OUT_STREAM_SEG1, 
+                OUT_STREAM1, OUT_STREAM2,
+                OUT_STREAM_POLY,
+                OUT_STREAMS_REFINE, 
+                temp1,
+                temp2,
+                temp3]
+
+if delete_files:
+    print("deleting files")
+    for item in delete_items:
+        arcpy.Delete_management(in_data=item)
+
+# keeping track of time
+startTime= time.time()
+beginTime = startTime
+
+def refineStreams():
+    """Creates a feature class (and backup of existing ones) to
+    review and refine which segments are streams."""
+
+    if not arcpy.Exists(OUT_STREAMS_REFINE):
+        print("refined stream poly")
+        arcpy.CopyFeatures_management(OUT_STREAM_POLY, OUT_STREAMS_REFINE)
+        
+        arcpy.AddField_management(in_table=OUT_STREAMS_REFINE,
+                                  field_name="isStream",
+                                  field_type="SHORT")
+    
+    # Make Feature Layers for selection process
+    arcpy.MakeFeatureLayer_management(in_features=OUT_STREAMS_REFINE,
+                                         out_layer="stream_lyr")
+        
+    if arcpy.Exists(OUT_STREAMS_REFINE2):
+        arcpy.MakeFeatureLayer_management(in_features=OUT_STREAMS_REFINE2,
+                                          out_layer="refine_backup_lyr",
+                                          where_clause="""isStream = 0""")    
+    
+        # Identify non streams from the previous backup  
+        arcpy.SelectLayerByLocation_management(in_layer="stream_lyr",
+                                               overlap_type="HAVE_THEIR_CENTER_IN",
+                                               select_features="refine_backup_lyr")
+    
+        arcpy.CalculateField_management(in_table="stream_lyr", field="isStream",
+                                        expression=0)
+    
+        arcpy.SelectLayerByAttribute_management(in_layer_or_view="stream_lyr",
+                                                selection_type="CLEAR_SELECTION")    
+    
+    # Identify streams outside of predefined NULL areas
+    
+    if arcpy.Exists(NULL_MASK):
+        arcpy.MakeFeatureLayer_management(in_features=NULL_MASK,
+                                          out_layer="null_mask_lyr",
+                                          where_clause="""isNULL = 1""")
+        
+        arcpy.SelectLayerByLocation_management(in_layer="stream_lyr",
+                                               overlap_type="INTERSECT",
+                                               select_features="null_mask_lyr",
+                                               invert_spatial_relationship="INVERT")
+        
+        arcpy.SelectLayerByAttribute_management(in_layer_or_view="stream_lyr", 
+                                               selection_type="REMOVE_FROM_SELECTION",
+                                               where_clause="""isStream = 0""")    
+        
+        arcpy.CalculateField_management(in_table="stream_lyr", field="isStream",
+                                        expression=1)
+    
+    # remove stubs shorter than riparian 
+    # width of 150 ft (fc units are feet)
+    arcpy.SelectLayerByAttribute_management(in_layer_or_view="stream_lyr", 
+                                           selection_type="NEW_SELECTION",
+                                           where_clause="""Strahler = 1 AND Shape_Length <= 150""")
+    
+    arcpy.CalculateField_management(in_table="stream_lyr",
+                                    field="isStream",
+                                    expression=0) 
+    
+    arcpy.SelectLayerByAttribute_management(in_layer_or_view="stream_lyr",
+                                            selection_type="CLEAR_SELECTION")
+        
+    delete_items = [OUT_STREAM_SEG1, 
+                    OUT_STREAM1, OUT_STREAM2,
+                    OUT_STREAM_POLY,
+                    OUT_STREAMS_REFINE2,
+                    temp1,
+                    temp2,
+                    temp3]
+    
+    print("deleting stream raster files")
+    for item in delete_items:
+        arcpy.Delete_management(in_data=item)
+    
+    # Make a new backup from an existing one
+    arcpy.CopyFeatures_management(OUT_STREAMS_REFINE, OUT_STREAMS_REFINE2)      
+    
+    arcpy.MakeFeatureLayer_management(in_features=OUT_STREAMS_REFINE,
+                                      out_layer="stream_refine_1",
+                                      where_clause="""isStream = 1""")
+
+    print("Stream Definition using refined streams")
+    arcpy.PolylineToRaster_conversion(in_features="stream_refine_1",
+                                      value_field="isStream",
+                                      out_rasterdataset=OUT_STREAM1)    
+    
+
+
+#-- 1a. Aggregate -------------------------
 # this is only needed if downscaling from 3ft
 if not arcpy.Exists(OUT_BE_AGG) and agg:
     print("elevation aggregate")
@@ -108,6 +258,9 @@ if not arcpy.Exists(OUT_BE_AGG) and agg:
     con_from_m = 1 / con_to_m
     cell_size = arcpy.Describe(BE).meanCellWidth
     init_cells_sqkm = int(stream_init_sqkm / ((cell_size * con_to_m / 1000) ** 2))
+    
+    print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
+    beginTime = time.time()    
     
     # Set env settings
     env.overwriteOutput = True
@@ -139,6 +292,7 @@ else:
     con_to_m = arcpy.Describe(BE).SpatialReference.metersPerUnit
     con_from_m = 1 / con_to_m
     cell_size = arcpy.Describe(BE).meanCellWidth
+    cell_size = 9.0
     init_cells_sqkm = int(stream_init_sqkm / ((cell_size * con_to_m / 1000) ** 2))
     
     # Set env settings
@@ -148,14 +302,53 @@ else:
     env.extent = OUT_BE
     env.mask = OUT_BE_AGG
     env.outputCoordinateSystem = sr
-
+ 
+#-- 1b. Sinks -------------------------
+if make_sinks and not arcpy.Exists(OUT_SINKS):
+    print("Sinks")
+    
+    ArcHydroTools.SinkEvaluation(Input_DEM_Raster=BE,
+                                 Output_Sink_Polygon_Feature_Class=OUT_SINKS,
+                                 Output_Sink_Drainage_Area_Feature_Class=OUT_SINK_DRAINAGE)
+    
+    print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
+    beginTime = time.time()    
+    
+if refine_streams:
+    refineStreams()
+            
+if burn: 
+    #-- Burn existing stream features into the DEM
+    if not arcpy.Exists(OUT_BE_BURN):
+        print("burn stream features")
+        ArcHydroTools.DEMReconditioning(Input_Raw_DEM_Raster=BE, 
+                                       Input_Stream_Raster_or_Feature_Class=burn_stream_fc, 
+                                       Number_of_Cells_for_Stream_Buffer=burn_buffer, 
+                                       Smooth_Drop_in_Z_Units=burn_drop, 
+                                       Sharp_Drop_in_Z_Units=burn_drop, 
+                                       Output_AGREE_DEM_Raster=OUT_BE_BURN)
+    
+    BE = Raster(OUT_BE_BURN)
+    
+    print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
+    beginTime = time.time()
+        
 #-- 2. Fill -------------------------
-if not arcpy.Exists(OUT_FILL):
+if not arcpy.Exists(OUT_BE_FILL):
     print("fill")
+    
     ArcHydroTools.FillSinks(Input_DEM_Raster=BE,
-                                   Output_Hydro_DEM_Raster=OUT_FILL)
-FILL = Raster(OUT_FILL)
+                                   Output_Hydro_DEM_Raster=OUT_BE_FILL)
+    
+BE_HYDRO = Raster(OUT_BE_FILL)
 
+#if not arcpy.Exists(OUT_BE_HYDRO_HS):
+#    print("hydro hillshade")
+#    BE_HYDRO_HS = Hillshade(BE_HYDRO, 315, 45, "NO_SHADOWS", 1)
+#    BE_HYDRO_HS.save(OUT_BE_HYDRO_HS)
+    
+print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
+beginTime = time.time()
 
 # ----------------------------------------------------------------------
 # Generate Base Hydro outputs
@@ -165,7 +358,10 @@ FILL = Raster(OUT_FILL)
 if not arcpy.Exists(OUT_FDR):
     print("flow direction")
     
-    ArcHydroTools.FlowDirection(FILL, OUT_FDR)
+    ArcHydroTools.FlowDirection(BE_HYDRO, OUT_FDR)
+    
+    print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
+    beginTime = time.time()         
     
 FDR = Raster(OUT_FDR)
 
@@ -173,8 +369,14 @@ FDR = Raster(OUT_FDR)
 if not arcpy.Exists(OUT_FAC):
     print("flow accumulation")
     ArcHydroTools.FlowAccumulation(FDR, OUT_FAC)
+    
+    print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
+    beginTime = time.time()     
         
 FAC = Raster(OUT_FAC)
+
+# stats need to be recalculated if the FAC is large
+arcpy.CalculateStatistics_management(in_raster_dataset=FAC,skip_existing="OVERWRITE")
 
 # -- 5. Stream Raster with NoData  -------------------------
 if not arcpy.Exists(OUT_STREAM1):
@@ -197,10 +399,12 @@ else:
     
 # -- 7. Stream Segmentation -------------------------
 if not arcpy.Exists(OUT_STREAM_SEG1):
-    print("Stream Segmentation Raster") 
-    #ArcHydroTools.StreamSegmentation(STREAM1, FAC, OUT_STREAM_SEG1)
-    STREAM_SEGS = StreamLink(STREAM1, FAC)
-    STREAM_SEGS.save(OUT_STREAM_SEG1)
+    print("Stream Segmentation Raster")
+    ArcHydroTools.StreamSegmentation(Input_Stream_Raster=STREAM1, 
+                                    Input_Flow_Direction_Raster=FDR, 
+                                    Output_Stream_Link_Raster=OUT_STREAM_SEG1)
+    STREAM_SEGS = Raster(OUT_STREAM_SEG1)
+    
 else:
     STREAM_SEGS = Raster(OUT_STREAM_SEG1)
 
@@ -211,6 +415,20 @@ if not arcpy.Exists(OUT_STREAM_POLY):
                                          Input_Flow_Direction_Raster=FDR,
                                          Output_Drainage_Line_Feature_Class=OUT_STREAM_POLY)
     
+    # Add Strahler stream order
+    print("Adding strahler stream order")
+    arcpy.AddField_management(in_table=OUT_STREAM_POLY,
+                              field_name="Strahler", field_type="SHORT")    
+    
+    ArcHydroTools.AssignRiverOrder(Input_Feature_Class_or_Table=OUT_STREAM_POLY, 
+                                  Input_River_Order_Field="Strahler", 
+                                  River_Order_Type="Strahler")
+
+    print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
+    beginTime = time.time()
+    
+print("Total process: {0:.1f} minutes".format((time.time() - startTime) / 60))
+ 
 # -- 9. Catchment Raster -------------------------
 if not arcpy.Exists(OUT_CATCHMENT):
     print("Catchment Raster")
@@ -566,4 +784,6 @@ if not arcpy.Exists(OUT_FAC_ARSA_EUCQ):
 
     FAC_ARSA_EUCQ.save(OUT_FAC_ARSA_EUCQ)
 
+
+print("Total process: {0:.1f} minutes".format((time.time() - StartTime) / 60))
 print("done")
