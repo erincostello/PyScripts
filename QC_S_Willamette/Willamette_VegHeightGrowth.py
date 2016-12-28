@@ -1,10 +1,12 @@
 
 """
-This script calculates a mean treatment height using height growth
-curves, treatment complete year (planting year), model year 
+This script generates the site potential landcover codes and year based
+height growth from the treatment type, height growth
+curves, treatment complete year (planting year), model year, 
 and other information from the imported heat source landcover
 code data file. The script outputs a new heat source landcover code
-data file for each model year.
+data files for each model year and the generic site potenial
+found in the TMDL.
 
 7/17/2015
 Ryan Michie
@@ -17,9 +19,6 @@ from collections import defaultdict
 from os.path import join
 import csv
 import imp
-
-# import module of various tree height growth curves
-tree = imp.load_source('tree_height_growth', r'C:\WorkSpace\GitHub\PyScripts\tree_height_growth.py')
 
 # list of the model years
 model_years = [2020, 2025, 2030, 2035, 2040]
@@ -40,14 +39,8 @@ lccode_current = "lccodes_treatments_current.csv"
 # The year will be appended to this name when the file is output
 lccode_data_csv = "lccodes_treatments"
 
-# Using the same values as current conditions
-canopy_cover = 0.85
-overhang = 0
-
-# Read in the lookup table to know how to use each code
-lccode16_dict = read_csv_to_dict(dirpath, lccode16_dict_csv)
-
-lccodes_list = read_csv_to_list(dirpath, lccode_current)
+# This is for site potential independent of year
+lccode_data_sp_csv = "lccodes_treatments_sp"
 
 # This is an alternative method.
 # Instead of reading in an existing lccodes csv
@@ -99,6 +92,84 @@ def write_csv(outputdir, filename, colnames, outlist):
         writer = csv.writer(file_object,  dialect= "excel")
         writer.writerows(outlist)
 
+# Read in the lookup table to know how to use each code
+lccode16_dict = read_csv_to_dict(dirpath, lccode16_dict_csv)
+
+lccodes_list = read_csv_to_list(dirpath, lccode_current)
+
+# Apply Site Potential based on treatment type
+# see page C-33 of the TMDL Appendix A.
+# http://www.deq.state.or.us/WQ/TMDLs/docs/willamettebasin/willamette/appxctemp.pdf
+
+lccodes_new = []
+
+for row in lccodes_list:
+    lccode = row[1]
+    ht_current = float(row[2])  # this is in meters
+    
+    if lccode != '-9999.0':
+        raw_code = int(str(lccode)[:2])
+        print(lccode, raw_code, ht_current)
+        
+        # values should look something like this:
+        # True, 2000, 80, pn
+        treatment_site, complete_year, treatment_luid, variant = lccode16_dict[raw_code]
+        
+        if treatment_site:
+            
+            # Treatment LUID
+            if treatment_luid == 80:
+                # 80 Conifer
+                treatment = "Conifer"
+                treatment_avg_ht = 160 * 0.3048
+                canopy_cover = 0.75
+                overhang = 4.9
+                
+            elif treatment_luid == 81: 
+                # 81 Conifer and Hardwood
+                treatment = "Conifer and Hardwood"
+                treatment_avg_ht = 90 * 0.3048
+                canopy_cover = 0.75
+                overhang = 3.3
+            
+            elif treatment_luid == 82:
+                # 82 Hardwood
+                treatment = "Hardwood"
+                treatment_avg_ht = 67 * 0.3048
+                canopy_cover = 0.75
+                overhang = 3.1
+                
+            ht_new = int(treatment_avg_ht + 0.5)
+            
+            if ht_current > ht_new:
+                desc = "{0} Treatment Site Existing Vegetation".format(treatment)
+                ht_new = ht_current
+                canopy_cover = 0.85
+                overhang = 0
+                
+            else:
+                desc = "{0} Treatment Site Plantings".format(treatment)
+                
+                
+            row[0] = desc
+            row[2] = ht_new
+            row[3] = canopy_cover
+            row[4] = overhang            
+            
+        else:
+            desc = "Non-Treatment Site"
+            
+            row[0] = desc
+                    
+    lccodes_new.append(row)
+            
+lccodesheader = ["NAME","CODE","HEIGHT", "CANOPY_COVER","OVERHANG"]
+outfilename = "{0}.csv".format(lccode_data_sp_csv)
+write_csv(dirpath, outfilename, lccodesheader, lccodes_new)
+
+# Using the same values as current conditions
+canopy_cover = 0.85
+overhang = 0
 
 for model_year in model_years:
     
@@ -106,7 +177,7 @@ for model_year in model_years:
 
     for row in lccodes_list:
         lccode = row[1]
-        ht_current = float(row[2])
+        ht_current = float(row[2]) # in meters
         
         if lccode != '-9999.0':
             raw_code = int(str(lccode)[:2])
