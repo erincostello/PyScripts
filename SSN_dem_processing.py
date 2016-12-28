@@ -19,29 +19,36 @@ from arcpy import env
 import ArcHydroTools
 
 # output directory for the hydro outputs
-#hydro_dir = r"F:\SSN_Test\hydro_burn.gdb"
+hydro_dir = r"F:\SSN_Test\NHDplus_v21\hydro.gdb"
 #hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Salmon.gdb"
 #hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Devils_Lake_Frontal.gdb"
-#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Siletz.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Siletz2.gdb"
 #hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Yaquina.gdb"
 #hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Beaver_Creek.gdb"
 #hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Alsea.gdb"
-hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Alsea_Frontals.gdb"
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Alsea_Frontals.gdb"
 #hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Siuslaw.gdb"
 #hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Siltcoos.gdb"
 
+#hydro_dir = r"F:\WorkSpace\Mid_Coast\Hydro\Mid_Coast.gdb"
+
+dem_input_name = "hydro_dem"
+
 # True if the DEM will be aggregated to a different resolutiuon
-agg = True
+agg = False
 agg_factor = 5
 
 make_sinks = False
 
 # delete files? preprocssing only
 delete_files = False
-# make a refined stream fc
-refine_streams = True
+
+# make a refined stream fc. To use this an unrefined stream poly 
+# must already exist.
+refine_streams = False
+
 # Burn Streams?
-burn = True
+burn = False
 burn_stream_fc = hydro_dir + r"\BurnPath"
 burn_buffer = 1
 burn_smooth = 10
@@ -54,6 +61,11 @@ burn_drop = 100
 stream_init_sqkm = 0.04
 stream_init_sqm = stream_init_sqkm * 1000000
 
+# distance metric to use for RSA
+distance_flow = False
+distance_euc = True
+distance_combo = False
+
 # Meters from the stream that defines the RSA
 rsa_m = 30
 
@@ -61,10 +73,17 @@ rsa_m = 30
 # be the same as the input DEM
 # NAD_1983_HARN_Oregon_Statewide_Lambert_Feet_Intl
 #sr = arcpy.SpatialReference(2994)
-sr = arcpy.SpatialReference(6557)
 
+# NAD_1983_2011_Oregon_Statewide_Lambert_Ft_Intl
+#sr = arcpy.SpatialReference(6557)
+
+# NAD_1983_Contiguous_USA_Albers
+sr = arcpy.SpatialReference(5070)
+
+
+# OUTPUT file names, No need to change.
 env.workspace = hydro_dir
-OUT_BE = env.workspace + "\\be"
+OUT_BE = env.workspace + "\\" + dem_input_name
 OUT_BE_AGG = env.workspace + "\\be_agg"
 
 OUT_SINKS = env.workspace + "\\sinks"
@@ -84,10 +103,10 @@ OUT_STREAMS_REFINE2 = env.workspace + "\\stream_refine_backup"
 
 OUT_STREAM1 = env.workspace + "\\stream1"
 OUT_STREAM2 = env.workspace + "\\stream2"
-OUT_STREAM_SEG1 =  env.workspace + "\\stream_seg"
+OUT_STREAM_SEG1 = env.workspace + "\\stream_seg"
 OUT_STREAM_POLY = env.workspace + "\\stream_poly"
 OUT_CATCHMENT = env.workspace + "\\catchment"
-OUT_CATCHMENT_POLY  = env.workspace + "\\catchment_poly"
+OUT_CATCHMENT_POLY = env.workspace + "\\catchment_poly"
 
 OUT_OUTLET_POINTS = env.workspace + "\\outlet_points"
 OUT_OUTLET_RASTER1 = env.workspace + "\\outlets1"
@@ -101,10 +120,10 @@ OUT_TO_STREAM2 = env.workspace + "\\to_stream"
 
 OUT_TO_STREAM_EUC = env.workspace + "\\to_stream_euc"
 OUT_FDR_EUC3 = env.workspace + "\\fdr_euc"
-OUT_FDR_EUC_OUTLET  = env.workspace + "\\fdr_euc_outlet"
+OUT_FDR_EUC_OUTLET = env.workspace + "\\fdr_euc_outlet"
 
 OUT_FDR_EUCQ = env.workspace + "\\fdr_eucq"
-OUT_FDR_EUCQ_OUTLET  = env.workspace + "\\fdr_eucq_outlet"
+OUT_FDR_EUCQ_OUTLET = env.workspace + "\\fdr_eucq_outlet"
 
 OUT_RSA_EUC_ZONE = env.workspace + "\\rsa_euc_zone"
 OUT_RSA_Q_ZONE = env.workspace + "\\rsa_q_zone"
@@ -117,16 +136,19 @@ OUT_RSA_EUCQ_WEIGHT = env.workspace + "\\rsa_eucq_weight"
 OUT_TO_OUTLET1 = env.workspace + "\\to_outlet_nd"
 OUT_TO_OUTLET2 = env.workspace + "\\to_outlet"
 
-OUT_FAC_RCA =  env.workspace + "\\fac_rca"
+OUT_FAC_RCA = env.workspace + "\\fac_rca"
 OUT_FAC_ARCA = env.workspace + "\\fac_arca"
 
-OUT_FAC_RSA_EUC=  env.workspace + "\\fac_rsa_euc"
-OUT_FAC_RSA_Q=  env.workspace + "\\fac_rsa_q"
-OUT_FAC_RSA_EUCQ=  env.workspace + "\\fac_rsa_eucq"
+OUT_FAC_RSA_EUC = env.workspace + "\\fac_rsa_euc"
+OUT_FAC_RSA_Q = env.workspace + "\\fac_rsa_q"
+OUT_FAC_RSA_EUCQ = env.workspace + "\\fac_rsa_eucq"
 
-OUT_FAC_ARSA_EUC =  env.workspace + "\\fac_arsa_euc"
-OUT_FAC_ARSA_Q =  env.workspace + "\\fac_arsa_q"
-OUT_FAC_ARSA_EUCQ =  env.workspace + "\\fac_arsa_eucq"
+OUT_FAC_ARSA_EUC = env.workspace + "\\fac_arsa_euc"
+OUT_FAC_ARSA_Q = env.workspace + "\\fac_arsa_q"
+OUT_FAC_ARSA_EUCQ = env.workspace + "\\fac_arsa_eucq"
+
+OUT_FAC_REACH = env.workspace + "\\fac_reach"
+OUT_FAC_AREACH = env.workspace + "\\fac_areach"
 
 temp1 = env.workspace + "\\APUNIQUEID"
 temp2 = env.workspace + "\\LAYERKEYTABLE"
@@ -247,7 +269,7 @@ def refineStreams():
 
 #-- 1a. Aggregate -------------------------
 # this is only needed if downscaling from 3ft
-if not arcpy.Exists(OUT_BE_AGG) and agg:
+if agg and not arcpy.Exists(OUT_BE_AGG):
     print("elevation aggregate")
     BE_AGG = Aggregate(in_raster=OUT_BE, cell_factor=agg_factor,
                        aggregation_type="MEAN")
@@ -292,7 +314,6 @@ else:
     con_to_m = arcpy.Describe(BE).SpatialReference.metersPerUnit
     con_from_m = 1 / con_to_m
     cell_size = arcpy.Describe(BE).meanCellWidth
-    cell_size = 9.0
     init_cells_sqkm = int(stream_init_sqkm / ((cell_size * con_to_m / 1000) ** 2))
     
     # Set env settings
@@ -300,7 +321,7 @@ else:
     env.cellSize = cell_size
     env.snapRaster = OUT_BE
     env.extent = OUT_BE
-    env.mask = OUT_BE_AGG
+    env.mask = OUT_BE
     env.outputCoordinateSystem = sr
  
 #-- 1b. Sinks -------------------------
@@ -333,12 +354,15 @@ if burn:
     print("{0:.1f} minutes".format((time.time() - beginTime) / 60))
     beginTime = time.time()
         
-#-- 2. Fill -------------------------
+#-- 2. Fill to make hydro dem-------------------------
 if not arcpy.Exists(OUT_BE_FILL):
     print("fill")
     
     ArcHydroTools.FillSinks(Input_DEM_Raster=BE,
                                    Output_Hydro_DEM_Raster=OUT_BE_FILL)
+    
+    # stats need to be recalculated if the DEM is large
+    arcpy.CalculateStatistics_management(in_raster_dataset=OUT_BE_FILL,skip_existing="OVERWRITE")    
     
 BE_HYDRO = Raster(OUT_BE_FILL)
 
@@ -573,217 +597,242 @@ if not arcpy.Exists(OUT_FAC_ARCA):
 # RSA and ARSA outputs based based on euclidean distance
 # ----------------------------------------------------------------------
 
-# -- 21. Generate a rsa zone raster based on euclidean distance --------
-if not arcpy.Exists(OUT_RSA_EUC_ZONE):
-    print("Euclidean RSA allocation zones")
-    RSA_EUC_ZONES = EucAllocation(in_source_data=STREAM_SEGS,
-                              maximum_distance=rsa_m*con_from_m,
-                              source_field="Value")
-    RSA_EUC_ZONES.save(OUT_RSA_EUC_ZONE)
-else:
-    RSA_EUC_ZONES = Raster(OUT_RSA_EUC_ZONE)
+if distance_euc:
+    # -- 21. Generate a rsa zone raster based on euclidean distance --------
+    if not arcpy.Exists(OUT_RSA_EUC_ZONE):
+        print("Euclidean RSA allocation zones")
+        RSA_EUC_ZONES = EucAllocation(in_source_data=STREAM_SEGS,
+                                  maximum_distance=rsa_m*con_from_m,
+                                  source_field="Value")
+        RSA_EUC_ZONES.save(OUT_RSA_EUC_ZONE)
+    else:
+        RSA_EUC_ZONES = Raster(OUT_RSA_EUC_ZONE)
     
-# -- 22. Generate an euclidean distance raster -------------------------
-if not arcpy.Exists(OUT_TO_STREAM_EUC):
-    print("Euclidean flow direction raster")
-    TO_STREAM_EUC = EucDistance(STREAM1, maximum_distance=rsa_m*con_from_m) * con_to_m
-    TO_STREAM_EUC.save(OUT_TO_STREAM_EUC)
-else:
-    TO_STREAM_EUC = Raster(OUT_TO_STREAM_EUC)
+    # -- 22. Generate an euclidean distance raster -------------------------
+    if not arcpy.Exists(OUT_TO_STREAM_EUC):
+        print("Euclidean flow direction raster")
+        TO_STREAM_EUC = EucDistance(STREAM1, maximum_distance=rsa_m*con_from_m) * con_to_m
+        TO_STREAM_EUC.save(OUT_TO_STREAM_EUC)
+    else:
+        TO_STREAM_EUC = Raster(OUT_TO_STREAM_EUC)
 
-# -- 23. Generate an euclidean distance flow direction raster -----------
-if not arcpy.Exists(OUT_FDR_EUC3):
-    print("Euclidean flow direction raster")
-    FDR_EUC1 = EucDirection(STREAM1, maximum_distance=rsa_m*con_from_m)
-     
-    rc_table = RemapRange([[1, 22.5, 64],
-                           [22.5,67.5, 128],
-                           [67.5, 112.5, 1],
-                           [112.5, 157.5, 2],
-                           [157.5, 202.5, 4],
-                           [202.5, 247.5, 8],
-                           [247.5, 292.5, 16],
-                           [292.5, 337.5, 32],
-                           [337.5, 360, 64]
-                           ])
+    # -- 23. Generate an euclidean distance flow direction raster -----------
+    if not arcpy.Exists(OUT_FDR_EUC3):
+        print("Euclidean flow direction raster")
+        FDR_EUC1 = EucDirection(STREAM1, maximum_distance=rsa_m*con_from_m)
+         
+        rc_table = RemapRange([[1, 22.5, 64],
+                               [22.5,67.5, 128],
+                               [67.5, 112.5, 1],
+                               [112.5, 157.5, 2],
+                               [157.5, 202.5, 4],
+                               [202.5, 247.5, 8],
+                               [247.5, 292.5, 16],
+                               [292.5, 337.5, 32],
+                               [337.5, 360, 64]
+                               ])
+        
+        # reclass
+        FDR_EUC2 = Reclassify(in_raster=FDR_EUC1,
+                                reclass_field="value",
+                                remap=rc_table,
+                                missing_values="DATA")
+        
+        # zero is the stream
+        FDR_EUC3 = Con(in_conditional_raster=(FDR_EUC2==0),
+                             in_true_raster_or_constant=FDR,
+                             in_false_raster_or_constant=FDR_EUC2)     
+        
+        FDR_EUC3.save(OUT_FDR_EUC3)
+    else:
+        FDR_EUC3 = Raster(OUT_FDR_EUC3)
+        
     
-    # reclass
-    FDR_EUC2 = Reclassify(in_raster=FDR_EUC1,
-                            reclass_field="value",
-                            remap=rc_table,
-                            missing_values="DATA")
+    # -- 24. Generate an euclidean distance flow direction w/ null outlets 
+    if not arcpy.Exists(OUT_FDR_EUC_OUTLET):
+        print("euclidean flow direction w/ null outlets")
+        
+        FDR_EUC_OUTLET = SetNull(in_conditional_raster=(OUTLETS2==1),
+                             in_false_raster_or_constant=FDR_EUC3)
     
-    # zero is the stream
-    FDR_EUC3 = Con(in_conditional_raster=(FDR_EUC2==0),
-                         in_true_raster_or_constant=FDR,
-                         in_false_raster_or_constant=FDR_EUC2)     
+        FDR_EUC_OUTLET.save(OUT_FDR_EUC_OUTLET)
+    else:
+        FDR_EUC_OUTLET = Raster(OUT_FDR_EUC_OUTLET)
+        
+    # -- 25. Generate RSA euclidean distance weight raster -----------------
+    if not arcpy.Exists(OUT_RSA_EUC_WEIGHT):
+        print("RSA weight raster")
+        
+        RSA_EUC_WEIGHT = SetNull(in_conditional_raster=(TO_STREAM_EUC > rsa_m),
+                             in_false_raster_or_constant=1)
     
-    FDR_EUC3.save(OUT_FDR_EUC3)
-else:
-    FDR_EUC3 = Raster(OUT_FDR_EUC3)
+        RSA_EUC_WEIGHT.save(OUT_RSA_EUC_WEIGHT)
+    else:
+        RSA_EUC_WEIGHT = Raster(OUT_RSA_EUC_WEIGHT)
     
-
-# -- 24. Generate an euclidean distance flow direction w/ null outlets 
-if not arcpy.Exists(OUT_FDR_EUC_OUTLET):
-    print("euclidean flow direction w/ null outlets")
+    # -- 26. Generate Euclidean distance RSA FAC raster ---------------------
+    if not arcpy.Exists(OUT_FAC_RSA_EUCQ):
+        print("RSA Euclidean distance fac raster")
+        
+        FAC_RSA_EUC = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUC_OUTLET, RSA_EUC_WEIGHT),
+                                     in_weight_raster=RSA_EUC_WEIGHT, 
+                                     data_type="FLOAT"), 1.0)
     
-    FDR_EUC_OUTLET = SetNull(in_conditional_raster=(OUTLETS2==1),
-                         in_false_raster_or_constant=FDR_EUC3)
-
-    FDR_EUC_OUTLET.save(OUT_FDR_EUC_OUTLET)
-else:
-    FDR_EUC_OUTLET = Raster(OUT_FDR_EUC_OUTLET)
+        FAC_RSA_EUC.save(OUT_FAC_RSA_EUC)
     
-# -- 25. Generate RSA euclidean distance weight raster -----------------
-if not arcpy.Exists(OUT_RSA_EUC_WEIGHT):
-    print("RSA weight raster")
+    # -- 27. Generate euclidean distance ARSA FAC raster --------------------
+    if not arcpy.Exists(OUT_FAC_ARSA_EUCQ):
+        print("ARSA Euclidean distance fac raster")
+        
+        FAC_ARSA_EUC = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUC3, RSA_EUC_WEIGHT),
+                                     in_weight_raster=RSA_EUC_WEIGHT, 
+                                     data_type="FLOAT"), 1.0)
     
-    RSA_EUC_WEIGHT = SetNull(in_conditional_raster=(TO_STREAM_EUC > rsa_m),
-                         in_false_raster_or_constant=1)
-
-    RSA_EUC_WEIGHT.save(OUT_RSA_EUC_WEIGHT)
-else:
-    RSA_EUC_WEIGHT = Raster(OUT_RSA_EUC_WEIGHT)
-
-# -- 26. Generate Euclidean distance RSA FAC raster ---------------------
-if not arcpy.Exists(OUT_FAC_RSA_EUCQ):
-    print("RSA Euclidean distance fac raster")
-    
-    FAC_RSA_EUC = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUC_OUTLET, RSA_EUC_WEIGHT),
-                                 in_weight_raster=RSA_EUC_WEIGHT, 
-                                 data_type="FLOAT"), 1.0)
-
-    FAC_RSA_EUC.save(OUT_FAC_RSA_EUC)
-
-# -- 27. Generate euclidean distance ARSA FAC raster --------------------
-if not arcpy.Exists(OUT_FAC_ARSA_EUCQ):
-    print("ARSA Euclidean distance fac raster")
-    
-    FAC_ARSA_EUC = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUC3, RSA_EUC_WEIGHT),
-                                 in_weight_raster=RSA_EUC_WEIGHT, 
-                                 data_type="FLOAT"), 1.0)
-
-    FAC_ARSA_EUC.save(OUT_FAC_ARSA_EUC)
+        FAC_ARSA_EUC.save(OUT_FAC_ARSA_EUC)
 
 # ----------------------------------------------------------------------
 # RSA and ARSA outputs based on Flow distance
 # ----------------------------------------------------------------------
+if distance_flow:
+    # -- 28. Generate RSA flow weight raster -------------------------
+    if not arcpy.Exists(OUT_RSA_Q_WEIGHT):
+        print("RSA flow distance weight raster")
+        
+        RSA_Q_WEIGHT = SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
+                             in_false_raster_or_constant=1)
     
-# -- 28. Generate RSA flow weight raster -------------------------
-if not arcpy.Exists(OUT_RSA_Q_WEIGHT):
-    print("RSA flow distance weight raster")
+        RSA_Q_WEIGHT.save(OUT_RSA_Q_WEIGHT)
+    else:
+        RSA_Q_WEIGHT = Raster(OUT_RSA_Q_WEIGHT)
     
-    RSA_Q_WEIGHT = SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
-                         in_false_raster_or_constant=1)
-
-    RSA_Q_WEIGHT.save(OUT_RSA_Q_WEIGHT)
-else:
-    RSA_Q_WEIGHT = Raster(OUT_RSA_Q_WEIGHT)
-
-# -- 29. Generate RSA flow distance zone raster -------------------------
-if not arcpy.Exists(OUT_RSA_Q_ZONE):
-    print("RSA flow distance zone raster")
+    # -- 29. Generate RSA flow distance zone raster -------------------------
+    if not arcpy.Exists(OUT_RSA_Q_ZONE):
+        print("RSA flow distance zone raster")
+        
+        RSA_Q_ZONE = Con(in_conditional_raster=(RSA_Q_WEIGHT==1),
+                             in_true_raster_or_constant=CATCHMENT)
+        
+        RSA_Q_ZONE.save(OUT_RSA_Q_ZONE)
+        
     
-    RSA_Q_ZONE = Con(in_conditional_raster=(RSA_Q_WEIGHT==1),
-                         in_true_raster_or_constant=CATCHMENT)
+    # -- 30. Generate flow distance RSA FAC raster -------------------------
+    if not arcpy.Exists(OUT_FAC_RSA_Q):
+        print("RSA flow distance fac raster")
+        
+        FAC_RSA_EUCQ = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_OUTLET, RSA_Q_WEIGHT),
+                                     in_weight_raster=RSA_Q_WEIGHT, 
+                                     data_type="FLOAT"), 1.0)
     
-    RSA_Q_ZONE.save(OUT_RSA_Q_ZONE)
+        FAC_RSA_EUCQ.save(OUT_FAC_RSA_Q)
     
-
-# -- 30. Generate flow distance RSA FAC raster -------------------------
-if not arcpy.Exists(OUT_FAC_RSA_Q):
-    print("RSA flow distance fac raster")
+    # -- 31. Generate flow distance ARSA FAC raster -------------------------
+    if not arcpy.Exists(OUT_FAC_ARSA_Q):
+        print("ARSA flow distance fac raster")
+        
+        FAC_ARSA_Q = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR, RSA_Q_WEIGHT),
+                                     in_weight_raster=RSA_Q_WEIGHT, 
+                                     data_type="FLOAT"), 1.0)
     
-    FAC_RSA_EUCQ = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_OUTLET, RSA_Q_WEIGHT),
-                                 in_weight_raster=RSA_Q_WEIGHT, 
-                                 data_type="FLOAT"), 1.0)
-
-    FAC_RSA_EUCQ.save(OUT_FAC_RSA_Q)
-
-# -- 31. Generate flow distance ARSA FAC raster -------------------------
-if not arcpy.Exists(OUT_FAC_ARSA_Q):
-    print("ARSA flow distance fac raster")
-    
-    FAC_ARSA_Q = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR, RSA_Q_WEIGHT),
-                                 in_weight_raster=RSA_Q_WEIGHT, 
-                                 data_type="FLOAT"), 1.0)
-
-    FAC_ARSA_Q.save(OUT_FAC_ARSA_Q)
+        FAC_ARSA_Q.save(OUT_FAC_ARSA_Q)
     
 # ----------------------------------------------------------------------
-# RSA and ARSA  outputs based on combination of Euclidean and Flow distance
+# RSA and ARSA outputs based on combination of Euclidean and Flow distance
+# ----------------------------------------------------------------------
+if distance_combo:
+    # -- 32. Reconcile RSA zones and catchments ---------------------------
+    if not arcpy.Exists(OUT_RSA_EUCQ_ZONE):
+        print("Reconcile RSA euclidean zones and catchments")
+            
+        RSA_EUCQ_ZONE = Con(in_conditional_raster=Divide(Plus(Times(CATCHMENT, 10),
+                                                              Times(RSA_EUC_ZONES, 10)), 2) == Times(RSA_EUC_ZONES, 10),
+                            in_true_raster_or_constant=RSA_EUC_ZONES,
+                            in_false_raster_or_constant=SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
+                                in_false_raster_or_constant=CATCHMENT))
+        RSA_EUCQ_ZONE.save(OUT_RSA_EUCQ_ZONE)
+    
+    
+    # -- 33. Generate a FDR based on the euclidean flow reconciliation ----
+    if not arcpy.Exists(OUT_FDR_EUCQ):
+        print("FDR for the euclidean-flow reconciliation ")
+            
+        FDR_EUCQ = Con(in_conditional_raster=Divide(Plus(Times(CATCHMENT, 10),
+                                                              Times(RSA_EUC_ZONES, 10)), 2) == Times(RSA_EUC_ZONES, 10),
+                            in_true_raster_or_constant=FDR_EUC3,
+                            in_false_raster_or_constant=SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
+                                in_false_raster_or_constant=FDR))
+        FDR_EUCQ.save(OUT_FDR_EUCQ)
+    
+    
+    # -- 34. Generate an euclidean distance flow reconciled flow direction w/ null outlets 
+    if not arcpy.Exists(OUT_FDR_EUCQ_OUTLET):
+        print("euclidean-flow reconciled flow direction w/ null outlets")
+        
+        FDR_EUCQ_OUTLET = SetNull(in_conditional_raster=(OUTLETS2==1),
+                             in_false_raster_or_constant=FDR_EUCQ)
+    
+        FDR_EUCQ_OUTLET.save(OUT_FDR_EUCQ_OUTLET)
+    else:
+        FDR_EUCQ_OUTLET = Raster(OUT_FDR_EUCQ_OUTLET)
+        
+    # -- 35. Generate an euclidean distance flow reconciled weight raster --
+    if not arcpy.Exists(OUT_RSA_EUCQ_WEIGHT):
+        print("RSA euclidean-flow reconciled weight raster")
+        
+        RSA_EUCQ_WEIGHT = Con(in_conditional_raster=Divide(Plus(Times(CATCHMENT, 10),
+                                                                Times(RSA_EUC_ZONES, 10)), 2) == Times(RSA_EUC_ZONES, 10),
+                              in_true_raster_or_constant=1,
+                              in_false_raster_or_constant=SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
+                                  in_false_raster_or_constant=1))
+    
+        RSA_EUCQ_WEIGHT.save(OUT_RSA_EUCQ_WEIGHT)
+    else:
+        RSA_EUCQ_WEIGHT = Raster(OUT_RSA_EUCQ_WEIGHT)
+        
+         
+    # -- 36. Generate Euclidean-flow reconciled RSA FAC raster --------------
+    if not arcpy.Exists(OUT_FAC_RSA_EUCQ):
+        print("RSA euclidean-flow reconciled fac raster")
+        
+        FAC_RSA_EUCQ = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUCQ_OUTLET, RSA_EUCQ_WEIGHT),
+                                     in_weight_raster=RSA_EUCQ_WEIGHT, 
+                                     data_type="FLOAT"), 1.0)
+    
+        FAC_RSA_EUCQ.save(OUT_FAC_RSA_EUCQ)
+    
+    # -- 37. Generate Euclidean-flow reconciled ARSA FAC raster ------------
+    if not arcpy.Exists(OUT_FAC_ARSA_EUCQ):
+        print("ARSA euclidean-flow reconciled fac raster")
+        
+        FAC_ARSA_EUCQ = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUCQ, RSA_EUCQ_WEIGHT),
+                                     in_weight_raster=RSA_EUCQ_WEIGHT, 
+                                     data_type="FLOAT"), 1.0)
+    
+        FAC_ARSA_EUCQ.save(OUT_FAC_ARSA_EUCQ)
+
+# ----------------------------------------------------------------------
+# REACH and AREACH outputs
 # ----------------------------------------------------------------------
 
-# -- 32. Reconcile RSA zones and catchments ---------------------------
-if not arcpy.Exists(OUT_RSA_EUCQ_ZONE):
-    print("Reconcile RSA euclidean zones and catchments")
-        
-    RSA_EUCQ_ZONE = Con(in_conditional_raster=Divide(Plus(Times(CATCHMENT, 10),
-                                                          Times(RSA_EUC_ZONES, 10)), 2) == Times(RSA_EUC_ZONES, 10),
-                        in_true_raster_or_constant=RSA_EUC_ZONES,
-                        in_false_raster_or_constant=SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
-                            in_false_raster_or_constant=CATCHMENT))
-    RSA_EUCQ_ZONE.save(OUT_RSA_EUCQ_ZONE)
-
-
-# -- 33. Generate a FDR based on the euclidean flow reconciliation ----
-if not arcpy.Exists(OUT_FDR_EUCQ):
-    print("FDR for the euclidean-flow reconciliation ")
-        
-    FDR_EUCQ = Con(in_conditional_raster=Divide(Plus(Times(CATCHMENT, 10),
-                                                          Times(RSA_EUC_ZONES, 10)), 2) == Times(RSA_EUC_ZONES, 10),
-                        in_true_raster_or_constant=FDR_EUC3,
-                        in_false_raster_or_constant=SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
-                            in_false_raster_or_constant=FDR))
-    FDR_EUCQ.save(OUT_FDR_EUCQ)
-
-
-# -- 34. Generate an euclidean distance flow reconciled flow direction w/ null outlets 
-if not arcpy.Exists(OUT_FDR_EUCQ_OUTLET):
-    print("euclidean-flow reconciled flow direction w/ null outlets")
+# -- 30. Generate REACH FAC raster -------------------------
+if not arcpy.Exists(OUT_FAC_REACH):
+    print("REACH fac raster")
     
-    FDR_EUCQ_OUTLET = SetNull(in_conditional_raster=(OUTLETS2==1),
-                         in_false_raster_or_constant=FDR_EUCQ)
-
-    FDR_EUCQ_OUTLET.save(OUT_FDR_EUCQ_OUTLET)
-else:
-    FDR_EUCQ_OUTLET = Raster(OUT_FDR_EUCQ_OUTLET)
-    
-# -- 35. Generate an euclidean distance flow reconciled weight raster --
-if not arcpy.Exists(OUT_RSA_EUCQ_WEIGHT):
-    print("RSA euclidean-flow reconciled weight raster")
-    
-    RSA_EUCQ_WEIGHT = Con(in_conditional_raster=Divide(Plus(Times(CATCHMENT, 10),
-                                                            Times(RSA_EUC_ZONES, 10)), 2) == Times(RSA_EUC_ZONES, 10),
-                          in_true_raster_or_constant=1,
-                          in_false_raster_or_constant=SetNull(in_conditional_raster=(TO_STREAM2 > rsa_m),
-                              in_false_raster_or_constant=1))
-
-    RSA_EUCQ_WEIGHT.save(OUT_RSA_EUCQ_WEIGHT)
-else:
-    RSA_EUCQ_WEIGHT = Raster(OUT_RSA_EUCQ_WEIGHT)
-    
-     
-# -- 36. Generate Euclidean-flow reconciled RSA FAC raster --------------
-if not arcpy.Exists(OUT_FAC_RSA_EUCQ):
-    print("RSA euclidean-flow reconciled fac raster")
-    
-    FAC_RSA_EUCQ = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUCQ_OUTLET, RSA_EUCQ_WEIGHT),
-                                 in_weight_raster=RSA_EUCQ_WEIGHT, 
+    FAC_REACH = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_OUTLET, STREAM1),
+                                 in_weight_raster=STREAM1, 
                                  data_type="FLOAT"), 1.0)
 
-    FAC_RSA_EUCQ.save(OUT_FAC_RSA_EUCQ)
+    FAC_REACH.save(OUT_FAC_REACH)
 
-# -- 37. Generate Euclidean-flow reconciled ARSA FAC raster ------------
-if not arcpy.Exists(OUT_FAC_ARSA_EUCQ):
-    print("ARSA euclidean-flow reconciled fac raster")
+# -- 31. Generate AREACH FAC raster -------------------------
+if not arcpy.Exists(OUT_FAC_AREACH):
+    print("AREACH fac raster")
     
-    FAC_ARSA_EUCQ = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR_EUCQ, RSA_EUCQ_WEIGHT),
-                                 in_weight_raster=RSA_EUCQ_WEIGHT, 
+    FAC_AREACH = Plus(FlowAccumulation(in_flow_direction_raster=Times(FDR, STREAM1),
+                                 in_weight_raster=STREAM1, 
                                  data_type="FLOAT"), 1.0)
 
-    FAC_ARSA_EUCQ.save(OUT_FAC_ARSA_EUCQ)
+    FAC_AREACH.save(OUT_FAC_AREACH)
 
 
-print("Total process: {0:.1f} minutes".format((time.time() - StartTime) / 60))
+print("Total process: {0:.1f} minutes".format((time.time() - startTime) / 60))
 print("done")

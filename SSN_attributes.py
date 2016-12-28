@@ -18,7 +18,8 @@ hydro_dir = r"F:\SSN_Test\hydro.gdb"
 attr_dir = r"F:\SSN_Test\attrbutes.gdb"
 
 # name of the starting attribute raster
-attr_name = "disturb_agg"
+#attr_name = "disturb_30m"
+attr_name = "shade"
 
 # Output Spatial reference
 # Same as Hydro inptus and attribute raster
@@ -27,27 +28,38 @@ sr = arcpy.SpatialReference(2994)
 
 # These are the raster names needed from the hydro directory
 env.workspace = hydro_dir
-FAC_RCA =  Raster(env.workspace + "\\fac_rca")
-FAC_RSA =  Raster(env.workspace + "\\fac_rsa")
+
+FAC_RCA = Raster(env.workspace + "\\fac_rca")
+FAC_RSA = Raster(env.workspace + "\\fac_rsa_euc")
+FAC_REACH = Raster(env.workspace + "\\fac_reach")
+
 FAC_ARCA = Raster(env.workspace + "\\fac_arca")
-FAC_ARSA =  Raster(env.workspace + "\\fac_arsa")
+FAC_ARSA = Raster(env.workspace + "\\fac_arsa_euc")
+FAC_AREACH = Raster(env.workspace + "\\fac_areach")
+
 FDR = Raster(env.workspace + "\\fdr")
 FDR_RSA = Raster(env.workspace + "\\fdr_euc")
 FDR_OUTLET = Raster(env.workspace + "\\fdr_outlet")
 FDR_RSA_OUTLET = Raster(env.workspace + "\\fdr_euc_outlet")
+
+REACH_WEIGHT = Raster(env.workspace + "\\stream1")
 RSA_WEIGHT = Raster(env.workspace + "\\rsa_euc_weight")
 OUTLETS = Raster(env.workspace + "\\outlets2")
 CATCHMENT = Raster(env.workspace + "\\catchment")
 RSA_ZONES = Raster(env.workspace + "\\rsa_euc_zone")
+STREAM_SEGS = Raster(env.workspace + "\\stream_seg")
 
 # Raster names output to the attribute directory
 env.workspace = attr_dir
-attr_path =  env.workspace + "\\"+ attr_name
+attr_path = env.workspace + "\\"+ attr_name
 ATTR = Raster(attr_path)
+
 OUT_ATTR_RSA = env.workspace + "\\" + attr_name + "_rsa"
 OUT_ATTR_RCA = env.workspace + "\\" + attr_name + "_rca"
+OUT_ATTR_REACH  = env.workspace + "\\" + attr_name + "_reach"
 OUT_ATTR_ARCA = env.workspace + "\\" + attr_name + "_arca"
 OUT_ATTR_ARSA = env.workspace + "\\" + attr_name + "_arsa"
+OUT_ATTR_AREACH  = env.workspace + "\\" + attr_name + "_areach"
 
 # Set env settings
 cell_size = arcpy.Describe(attr_path).meanCellWidth
@@ -83,7 +95,35 @@ def accumulate(attr_raster, fac_raster, fdr_raster, weight=1,
                          in_false_raster_or_constant=attr_accum)
     else:
         return attr_accum
-
+    
+    
+# -- REACH -----------------------------------------
+if not arcpy.Exists(OUT_ATTR_REACH):
+    print("{0} REACH MEAN".format(attr_name))
+    """
+   Calculates the mean reach value from all points on that reach.
+   If no points are on a reach the return value is NULL. NULL reaches
+   will not be accumulated in the downstream direction
+    """    
+    ATTR_REACH = ZonalStatistics(in_zone_data=STREAM_SEGS,
+                                 zone_field="Value",
+                                 in_value_raster=ATTR,
+                                 statistics_type="MEAN",
+                                 ignore_nodata="DATA")     
+    
+    ATTR_REACH.save(OUT_ATTR_REACH)
+else:
+    ATTR_REACH = Raster(OUT_ATTR_REACH)
+    
+# -- AREACH -----------------------------------------
+if not arcpy.Exists(OUT_ATTR_AREACH):
+    print("{0} AREACH".format(attr_name))
+    ATTR_AREACH = accumulate(attr_raster=ATTR_REACH,
+                             fac_raster=FAC_AREACH,
+                             fdr_raster=FDR,
+                             weight=REACH_WEIGHT)
+    
+    ATTR_AREACH.save(OUT_ATTR_AREACH)
 
 # -- RCA -----------------------------------------
 if not arcpy.Exists(OUT_ATTR_RCA):
