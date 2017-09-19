@@ -4,7 +4,7 @@ from math import log
 
 """
 This module contains a collection of functions to calculate
-a mean tree height in methers using various height growth curves found
+a mean tree height in meters using various height growth curves found
 in the literature.
 
 5/04/2016
