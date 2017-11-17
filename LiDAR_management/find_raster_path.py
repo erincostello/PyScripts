@@ -24,9 +24,9 @@ from operator import itemgetter
 # -- Start Inputs ------------------------------------------------------
 
 # output csv files
-csv_be = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_BE_rasters.csv"
-csv_hh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_HH_rasters.csv"
-csv_vh = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_VH_rasters.csv"
+csv_be = r"C:\LiDAR\MF_Coquille_BE_rasters.csv"
+csv_hh = r"C:\LiDAR\MF_Coquille_HH_rasters.csv"
+csv_vh = r"C:\LiDAR\MF_Coquille_VH_rasters.csv"
 
 # if overwrite_csv = False an existing output csv should be present 
 # it reads in the data and appends any new data found 
@@ -71,20 +71,11 @@ use_geofilter = True
 
 geo_field_name = "HUC_8"
 
-# Mid Coast
-geo_area = "'17100204','17100205','17100206','17100207'"
+# Middle Fork Coquille
+geo_area = "'17100305'"
 
 # The folders to walk to look for raster data
-workspaces = [r"\\DEQWQNAS01\Lidar01\PDX-MTHood",
-               r"\\DEQWQNAS01\Lidar01\Yaquina_Block", 
-               r"\\DEQWQNAS01\Lidar01\WillametteValley",
-               r"\\DEQWQNAS01\Lidar01\SouthCoast",
-               r"\\DEQWQNAS01\Lidar03\Central_Coast_Range",
-               r"\\DEQWQNAS01\Lidar04\OLC_NORTH_COAST_2009",
-               r"\\DEQWQNAS01\Lidar05\OLC_SCAPPOOSE_2013",
-               r"\\DEQWQNAS01\Lidar05\OLC_TILLAMOOK_YAMHILL_2012",
-               r"\\DEQWQNAS01\Lidar05\OLC_YAMBO_2010",
-               r"\\DEQWQNAS01\Lidar06\OLC_LANE_COUNTY_2014"]
+workspaces = [r"\\DEQWQNAS01\Lidar01\SouthCoast"]
 
 # Southern Willamette
 #geo_area = "'17090001','17090002','17090003','17090004','17090005','17090006'"
