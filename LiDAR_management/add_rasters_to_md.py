@@ -1,4 +1,6 @@
 """
+STEP 2: Middle Fork Coquille
+
 Adds rasters identifed in a comma delimited text file to an ESRI mosaic
 dataset. The text file is produced by running the
 script "find_raster_path.py". A mosaic dataset must already exist.
@@ -17,19 +19,19 @@ from osgeo import ogr, gdal
 # -- Start Inputs ------------------------------------------------------
 
 # input comma seperated text file w/ inventory of rasters going into md
-incsvfile = r"F:\LiDAR\Mid_Coast\Mid_Coast_md_BE_rasters.csv"
-#incsvfile = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_HH_rasters.csv"
-#incsvfile = r"\\DEQWQNAS01\Lidar01\OR_INVENTORY\Mid_Coast_VH_rasters.csv"
+incsvfile = r"C:\LiDAR\MF_Coquille_BE_rasters.csv"
+#incsvfile = r"C:\LiDAR\MF_Coquille_HH_rasters.csv"
+#incsvfile = r"C:\LiDAR\MF_Coquille_VH_rasters.csv"
 
 # output comma seperated text file w/ inventory of rasters in md 
-outcsvfile = r"F:\LiDAR\Mid_Coast\Mid_Coast_md_BE_rasters.csv"
-#outcsvfile = r"F:\LiDAR\Mid_Coast\Mid_Coast_md_HH_rasters.csv"
-#outcsvfile = r"F:\LiDAR\Mid_Coast\Mid_Coast_md_VH_rasters.csv"
+outcsvfile = r"C:\LiDAR\MF_Coquille_BE_rasters.csv"
+#outcsvfile = r"C:\LiDAR\MF_Coquille_HH_rasters.csv"
+#outcsvfile = r"C:\LiDAR\MF_Coquille_VH_rasters.csv"
 
 # directory and name of the mosaic dataset 
-mdname = r"F:\LiDAR\Mid_Coast\MOSAICS.gdb\BE"
-#mdname = r"F:\LiDAR\Mid_Coast\MOSAICS.gdb\HH"
-#mdname = r"F:\LiDAR\Mid_Coast\MOSAICS.gdb\VH"
+mdname = r"C:\LiDAR\MOSAICS.gdb\BE"
+#mdname = r"C:\LiDAR\MOSAICS.gdb\HH"
+#mdname = r"C:\LiDAR\MOSAICS.gdb\VH"
 
 # output column assignments
 status_col = 0
@@ -50,7 +52,7 @@ use_newname = True
 use_newdir = True
 
 # the directory where raster data will be copied if 'use_newdir' is True
-newdir = r"F:\LiDAR\Mid_Coast\BE"
+newdir = r"C:\LiDAR\BE"
 
 # output raster format when coping, use "" for ESRI grid 
 out_format = ""
